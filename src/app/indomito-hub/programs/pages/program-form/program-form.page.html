@@ -61,338 +61,238 @@
       </aside>
     }
 
-    <div class="grid items-start gap-7 lg:grid-cols-[14rem_minmax(0,1fr)]">
-      <aside class="hidden lg:sticky lg:top-6 lg:block">
-        <nav
-          aria-label="Secciones del formulario"
-          class="overflow-hidden rounded-2xl border border-line/80 bg-surface/95 p-3 shadow-panel backdrop-blur"
+    <main id="program-form-content" class="min-w-0 scroll-mt-6 flex flex-col gap-5">
+      @if (catalogStore.hasError()) {
+        <aside
+          role="alert"
+          class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-950 sm:flex-row sm:items-center sm:justify-between"
         >
-          <p
-            class="px-3 pb-3 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-muted"
+          <p class="text-sm font-medium">No se pudieron obtener los catálogos de la cotización.</p>
+          <button
+            pButton
+            type="button"
+            severity="danger"
+            outlined
+            [disabled]="catalogStore.loading()"
+            (click)="catalogStore.retry()"
           >
-            Configuración
-          </p>
-          <ol class="space-y-1">
-            <li>
-              <a
-                appMotionPress
-                [routerLink]="[]"
-                fragment="datos-generales"
-                class="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-graphite transition-colors duration-150 hover:bg-canvas hover:text-ink"
-              >
-                <span
-                  class="flex size-7 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-[0.6875rem] font-bold group-hover:border-brand group-hover:bg-brand"
-                  >01</span
-                >
-                Datos generales
-              </a>
-            </li>
-            <li>
-              <a
-                appMotionPress
-                [routerLink]="[]"
-                fragment="fechas-cantidades"
-                class="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-graphite transition-colors duration-150 hover:bg-canvas hover:text-ink"
-              >
-                <span
-                  class="flex size-7 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-[0.6875rem] font-bold group-hover:border-brand group-hover:bg-brand"
-                  >02</span
-                >
-                Duración y grupo
-              </a>
-            </li>
-            <li>
-              <a
-                appMotionPress
-                [routerLink]="[]"
-                fragment="parametros-precio"
-                class="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-graphite transition-colors duration-150 hover:bg-canvas hover:text-ink"
-              >
-                <span
-                  class="flex size-7 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-[0.6875rem] font-bold group-hover:border-brand group-hover:bg-brand"
-                  >03</span
-                >
-                Precios
-              </a>
-            </li>
-            <li>
-              <a
-                appMotionPress
-                [routerLink]="[]"
-                fragment="tripulacion"
-                class="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-graphite transition-colors duration-150 hover:bg-canvas hover:text-ink"
-              >
-                <span
-                  class="flex size-7 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-[0.6875rem] font-bold group-hover:border-brand group-hover:bg-brand"
-                  >04</span
-                >
-                Tripulación
-              </a>
-            </li>
-            <li>
-              <a
-                appMotionPress
-                [routerLink]="[]"
-                fragment="servicios"
-                class="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-graphite transition-colors duration-150 hover:bg-canvas hover:text-ink"
-              >
-                <span
-                  class="flex size-7 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-[0.6875rem] font-bold group-hover:border-brand group-hover:bg-brand"
-                  >05</span
-                >
-                Servicios
-              </a>
-            </li>
-          </ol>
-        </nav>
-        <div
-          class="mt-4 rounded-2xl bg-night p-4 text-white shadow-[0_18px_45px_-36px_rgba(28,28,28,0.85)]"
-        >
-          <div class="mb-2 flex items-center gap-2 text-xs font-semibold text-brand">
-            <span aria-hidden="true" class="size-1.5 rounded-full bg-brand"></span>
-            Flujo de trabajo
-          </div>
-          <p class="text-xs leading-5 text-white/60">
-            Completa cada sección y revisa el presupuesto antes de exportar.
-          </p>
-        </div>
-      </aside>
+            Reintentar catálogos
+          </button>
+        </aside>
+      }
 
-      <main id="program-form-content" class="min-w-0 scroll-mt-6 flex flex-col gap-5">
-        @if (catalogStore.hasError()) {
-          <aside
-            role="alert"
-            class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-950 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <p class="text-sm font-medium">
-              No se pudieron obtener los catálogos de la cotización.
-            </p>
-            <button
-              pButton
-              type="button"
-              severity="danger"
-              outlined
-              [disabled]="catalogStore.loading()"
-              (click)="catalogStore.retry()"
+      <p-panel
+        id="datos-generales"
+        class="scroll-mt-6"
+        header="Datos generales"
+        [toggleable]="true"
+        [pt]="panelPt"
+      >
+        <app-general-data-panel
+          [group]="programFormStore.form.controls.generals"
+          [plans]="catalogStore.plans()"
+          [seasons]="catalogStore.seasons()"
+          [destinations]="catalogStore.destinations()"
+          [loading]="catalogStore.loading()"
+          [embedded]="true"
+        />
+      </p-panel>
+
+      <p-panel
+        id="fechas-cantidades"
+        class="scroll-mt-6"
+        header="Duración y cantidades"
+        [toggleable]="true"
+        [pt]="panelPt"
+      >
+        <app-schedule-panel
+          [group]="programFormStore.form.controls.schedule"
+          [payingPassengers]="programFormStore.payingPassengers()"
+          [nightsExceedDays]="programFormStore.nightsExceedDays()"
+          [embedded]="true"
+        />
+      </p-panel>
+
+      <section
+        aria-labelledby="exchange-status-heading"
+        class="relative overflow-hidden rounded-2xl border border-line/80 bg-surface p-5 shadow-panel sm:p-6"
+        [attr.aria-busy]="exchangeRateStore.loading()"
+      >
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p
+              class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted"
             >
-              Reintentar catálogos
-            </button>
-          </aside>
-        }
-
-        <p-panel
-          id="datos-generales"
-          class="scroll-mt-6"
-          header="Datos generales"
-          [toggleable]="true"
-          [pt]="panelPt"
-        >
-          <app-general-data-panel
-            [group]="programFormStore.form.controls.generals"
-            [plans]="catalogStore.plans()"
-            [seasons]="catalogStore.seasons()"
-            [destinations]="catalogStore.destinations()"
-            [loading]="catalogStore.loading()"
-            [embedded]="true"
-          />
-        </p-panel>
-
-        <p-panel
-          id="fechas-cantidades"
-          class="scroll-mt-6"
-          header="Duración y cantidades"
-          [toggleable]="true"
-          [pt]="panelPt"
-        >
-          <app-schedule-panel
-            [group]="programFormStore.form.controls.schedule"
-            [payingPassengers]="programFormStore.payingPassengers()"
-            [nightsExceedDays]="programFormStore.nightsExceedDays()"
-            [embedded]="true"
-          />
-        </p-panel>
-
-        <section
-          aria-labelledby="exchange-status-heading"
-          class="relative overflow-hidden rounded-2xl border border-line/80 bg-surface p-5 shadow-panel sm:p-6"
-          [attr.aria-busy]="exchangeRateStore.loading()"
-        >
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p
-                class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted"
-              >
-                <span aria-hidden="true" class="h-px w-6 bg-brand-active"></span>
-                Conversión
-              </p>
-              <h2 id="exchange-status-heading" class="mt-1 text-lg font-semibold text-ink">
-                Tipos de cambio
-              </h2>
-            </div>
-
-            @if (exchangeRateStore.loading()) {
-              <div role="status" class="flex items-center gap-3 text-sm font-medium text-graphite">
-                <p-progress-spinner
-                  ariaLabel="Cargando tipos de cambio"
-                  strokeWidth="6"
-                  [style]="{ width: '1.5rem', height: '1.5rem' }"
-                />
-                Obteniendo tasas vigentes…
-              </div>
-            } @else if (exchangeRateStore.hasError()) {
-              <div class="flex flex-col items-start gap-2 sm:items-end">
-                <p class="text-sm font-medium text-red-800">
-                  No se pudieron obtener los tipos de cambio.
-                </p>
-                <button
-                  pButton
-                  type="button"
-                  severity="danger"
-                  outlined
-                  (click)="exchangeRateStore.retry()"
-                >
-                  Reintentar tasas
-                </button>
-              </div>
-            } @else if (exchangeRateStore.snapshot(); as snapshot) {
-              <dl class="grid grid-cols-2 gap-2 text-sm lg:grid-cols-4">
-                <div class="rounded-xl bg-canvas px-3 py-2.5">
-                  <dt class="text-muted">Fecha</dt>
-                  <dd class="font-semibold text-ink">
-                    {{ snapshot.date | date: 'longDate' : 'UTC' }}
-                  </dd>
-                </div>
-                <div class="rounded-xl bg-canvas px-3 py-2.5">
-                  <dt class="text-muted">USD</dt>
-                  <dd class="font-semibold tabular-nums text-ink">
-                    {{ snapshot.usdToClp | clpAmount }} CLP
-                  </dd>
-                </div>
-                <div class="rounded-xl bg-canvas px-3 py-2.5">
-                  <dt class="text-muted">BRL</dt>
-                  <dd class="font-semibold tabular-nums text-ink">
-                    {{ snapshot.brlToClp | clpAmount }} CLP
-                  </dd>
-                </div>
-                <div class="rounded-xl bg-canvas px-3 py-2.5">
-                  <dt class="text-muted">Origen</dt>
-                  <dd class="font-semibold text-ink">
-                    {{ exchangeRateSourceLabel(snapshot) }}
-                  </dd>
-                </div>
-              </dl>
-            }
+              <span aria-hidden="true" class="h-px w-6 bg-brand-active"></span>
+              Conversión
+            </p>
+            <h2 id="exchange-status-heading" class="mt-1 text-lg font-semibold text-ink">
+              Tipos de cambio
+            </h2>
           </div>
 
-          @if (exchangeRateStore.fallbackDate(); as fallbackDate) {
-            <div class="mt-4 flex flex-col gap-3">
-              <app-fallback-rates-notice [date]="fallbackDate" />
+          @if (exchangeRateStore.loading()) {
+            <div role="status" class="flex items-center gap-3 text-sm font-medium text-graphite">
+              <p-progress-spinner
+                ariaLabel="Cargando tipos de cambio"
+                strokeWidth="6"
+                [style]="{ width: '1.5rem', height: '1.5rem' }"
+              />
+              Obteniendo tasas vigentes…
+            </div>
+          } @else if (exchangeRateStore.hasError()) {
+            <div class="flex flex-col items-start gap-2 sm:items-end">
+              <p class="text-sm font-medium text-red-800">
+                No se pudieron obtener los tipos de cambio.
+              </p>
               <button
                 pButton
                 type="button"
-                severity="warn"
+                severity="danger"
                 outlined
-                class="self-start"
-                [disabled]="exchangeRateStore.loading()"
                 (click)="exchangeRateStore.retry()"
               >
-                Reintentar tasas del día
+                Reintentar tasas
               </button>
             </div>
+          } @else if (exchangeRateStore.snapshot(); as snapshot) {
+            <dl class="grid grid-cols-2 gap-2 text-sm lg:grid-cols-4">
+              <div class="rounded-xl bg-canvas px-3 py-2.5">
+                <dt class="text-muted">Fecha</dt>
+                <dd class="font-semibold text-ink">
+                  {{ snapshot.date | date: 'longDate' : 'UTC' }}
+                </dd>
+              </div>
+              <div class="rounded-xl bg-canvas px-3 py-2.5">
+                <dt class="text-muted">USD</dt>
+                <dd class="font-semibold tabular-nums text-ink">
+                  {{ snapshot.usdToClp | clpAmount }} CLP
+                </dd>
+              </div>
+              <div class="rounded-xl bg-canvas px-3 py-2.5">
+                <dt class="text-muted">BRL</dt>
+                <dd class="font-semibold tabular-nums text-ink">
+                  {{ snapshot.brlToClp | clpAmount }} CLP
+                </dd>
+              </div>
+              <div class="rounded-xl bg-canvas px-3 py-2.5">
+                <dt class="text-muted">Origen</dt>
+                <dd class="font-semibold text-ink">
+                  {{ exchangeRateSourceLabel(snapshot) }}
+                </dd>
+              </div>
+            </dl>
           }
-        </section>
+        </div>
 
-        <p-panel
-          id="parametros-precio"
-          class="scroll-mt-6"
-          header="Parámetros de precio"
-          [toggleable]="true"
-          [pt]="panelPt"
-        >
-          <app-pricing-panel
-            [group]="programFormStore.form.controls.pricing"
-            [snapshot]="exchangeRateStore.snapshot()"
-            [belowUtilityFloor]="programFormStore.belowUtilityFloor()"
-            [minimumUtilityRate]="catalogStore.minUtilityRate() ?? null"
-            [embedded]="true"
-          />
-        </p-panel>
+        @if (exchangeRateStore.fallbackDate(); as fallbackDate) {
+          <div class="mt-4 flex flex-col gap-3">
+            <app-fallback-rates-notice [date]="fallbackDate" />
+            <button
+              pButton
+              type="button"
+              severity="warn"
+              outlined
+              class="self-start"
+              [disabled]="exchangeRateStore.loading()"
+              (click)="exchangeRateStore.retry()"
+            >
+              Reintentar tasas del día
+            </button>
+          </div>
+        }
+      </section>
 
-        <p-panel
-          id="tripulacion"
-          class="scroll-mt-6"
-          header="Tripulación"
-          [toggleable]="true"
-          [pt]="panelPt"
-        >
-          <app-crew-panel
-            [crews]="programFormStore.form.controls.crews"
-            [revision]="programFormStore.dynamicRowsRevision()"
-            [embedded]="true"
-          />
-        </p-panel>
+      <p-panel
+        id="parametros-precio"
+        class="scroll-mt-6"
+        header="Parámetros de precio"
+        [toggleable]="true"
+        [pt]="panelPt"
+      >
+        <app-pricing-panel
+          [group]="programFormStore.form.controls.pricing"
+          [snapshot]="exchangeRateStore.snapshot()"
+          [belowUtilityFloor]="programFormStore.belowUtilityFloor()"
+          [minimumUtilityRate]="catalogStore.minUtilityRate() ?? null"
+          [embedded]="true"
+        />
+      </p-panel>
 
-        <p-panel
-          id="servicios"
-          class="scroll-mt-6"
-          header="Servicios"
-          [toggleable]="true"
-          [pt]="panelPt"
-        >
-          <app-services-panel
-            [services]="programFormStore.form.controls.services"
-            [revision]="programFormStore.dynamicRowsRevision()"
-            [embedded]="true"
-          />
-        </p-panel>
+      <p-panel
+        id="tripulacion"
+        class="scroll-mt-6"
+        header="Tripulación"
+        [toggleable]="true"
+        [pt]="panelPt"
+      >
+        <app-crew-panel
+          [crews]="programFormStore.form.controls.crews"
+          [revision]="programFormStore.dynamicRowsRevision()"
+          [embedded]="true"
+        />
+      </p-panel>
 
-        @if (programFormStore.rows().length > 0) {
-          @if (programFormStore.totals(); as totals) {
-            @if (programFormStore.effectiveRates(); as effectiveRates) {
-              @if (exchangeRateStore.snapshot(); as snapshot) {
-                <p-panel
-                  header="Resumen"
-                  class="block w-0 min-w-full max-w-full"
-                  [toggleable]="true"
-                  [pt]="panelPt"
-                >
-                  <app-summary-table
-                    class="block w-0 min-w-full max-w-full overflow-hidden"
-                    [rows]="programFormStore.visibleRows()"
-                    [totalRowCount]="programFormStore.rows().length"
-                    [totals]="totals"
-                    [effectiveRates]="effectiveRates"
-                    [snapshotDate]="snapshot.date"
-                    [snapshotSource]="snapshot.source"
-                    [snapshotIsFallback]="snapshot.isFallback"
-                    [fallbackDate]="exchangeRateStore.fallbackDate()"
-                    [busy]="actionBusy()"
-                    [embedded]="true"
-                    (searchChanged)="programFormStore.searchTerm.set($event)"
-                    (pdfRequested)="exportPdf()"
-                    (excelRequested)="exportExcel()"
-                  />
-                </p-panel>
-              }
+      <p-panel
+        id="servicios"
+        class="scroll-mt-6"
+        header="Servicios"
+        [toggleable]="true"
+        [pt]="panelPt"
+      >
+        <app-services-panel
+          [services]="programFormStore.form.controls.services"
+          [revision]="programFormStore.dynamicRowsRevision()"
+          [embedded]="true"
+        />
+      </p-panel>
+
+      @if (programFormStore.rows().length > 0) {
+        @if (programFormStore.totals(); as totals) {
+          @if (programFormStore.effectiveRates(); as effectiveRates) {
+            @if (exchangeRateStore.snapshot(); as snapshot) {
+              <p-panel
+                header="Resumen"
+                class="block w-0 min-w-full max-w-full"
+                [toggleable]="true"
+                [pt]="panelPt"
+              >
+                <app-summary-table
+                  class="block w-0 min-w-full max-w-full overflow-hidden"
+                  [rows]="programFormStore.visibleRows()"
+                  [totalRowCount]="programFormStore.rows().length"
+                  [totals]="totals"
+                  [effectiveRates]="effectiveRates"
+                  [snapshotDate]="snapshot.date"
+                  [snapshotSource]="snapshot.source"
+                  [snapshotIsFallback]="snapshot.isFallback"
+                  [fallbackDate]="exchangeRateStore.fallbackDate()"
+                  [busy]="actionBusy()"
+                  [embedded]="true"
+                  (searchChanged)="programFormStore.searchTerm.set($event)"
+                  (pdfRequested)="exportPdf()"
+                  (excelRequested)="exportExcel()"
+                />
+              </p-panel>
             }
           }
         }
+      }
 
-        <footer
-          class="flex flex-col-reverse justify-end gap-2 rounded-2xl border border-white/10 bg-night p-4 shadow-[0_24px_60px_-38px_rgba(28,28,28,0.85)] sm:p-5 sm:flex-row"
+      <footer
+        class="flex flex-col-reverse justify-end gap-2 rounded-2xl border border-white/10 bg-night p-4 shadow-[0_24px_60px_-38px_rgba(28,28,28,0.85)] sm:p-5 sm:flex-row"
+      >
+        <button
+          #previewTrigger
+          pButton
+          type="button"
+          [disabled]="!programFormStore.canPreview() || actionBusy()"
+          (click)="openPreview()"
         >
-          <button
-            #previewTrigger
-            pButton
-            type="button"
-            [disabled]="!programFormStore.canPreview() || actionBusy()"
-            (click)="openPreview()"
-          >
-            Previsualizar
-          </button>
-        </footer>
-      </main>
-    </div>
+          Previsualizar
+        </button>
+      </footer>
+    </main>
   </div>
 </div>
 

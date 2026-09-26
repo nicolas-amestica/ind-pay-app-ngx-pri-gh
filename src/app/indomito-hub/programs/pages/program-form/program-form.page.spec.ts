@@ -111,6 +111,17 @@ describe('ProgramFormPage', () => {
     );
   });
 
+  it('dedica todo el ancho disponible al formulario sin navegación lateral', async () => {
+    const fixture = TestBed.createComponent(ProgramFormPage);
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+    const content = host.querySelector<HTMLElement>('#program-form-content');
+
+    expect(content?.parentElement?.classList).toContain('mx-auto');
+    expect(host.textContent).not.toContain('Configuración');
+    expect(host.textContent).not.toContain('Flujo de trabajo');
+  });
+
   it('delega las notificaciones al contenedor global', async () => {
     const fixture = TestBed.createComponent(ProgramFormPage);
     await fixture.whenStable();
