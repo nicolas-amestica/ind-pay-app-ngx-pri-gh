@@ -117,7 +117,7 @@ html.dark {
 
 @layer components {
   .app-panel {
-    @apply rounded-2xl border border-line bg-surface;
+    @apply rounded-2xl border border-line/55 bg-surface;
   }
 
   .app-muted {

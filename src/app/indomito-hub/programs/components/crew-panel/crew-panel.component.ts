@@ -51,6 +51,8 @@ export class CrewPanelComponent {
         'aria-invalid': invalid ? 'true' : null,
         'aria-describedby': invalid ? errorId : null,
       },
+      overlay: { class: 'border-line/55!' },
+      listContainer: { class: 'border-line/55!' },
     };
   }
 }

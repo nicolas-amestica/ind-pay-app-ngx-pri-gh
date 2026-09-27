@@ -69,6 +69,7 @@
           ><span>Período <span class="text-red-600" aria-hidden="true">*</span></span
           ><p-datepicker
             fluid
+            [pt]="datePickerPt"
             formControlName="period"
             view="month"
             dateFormat="mm/yy"
@@ -81,6 +82,7 @@
         <label class="flex flex-col gap-2"
           ><span>Cotización guardada <span class="text-red-600" aria-hidden="true">*</span></span>
           <p-select
+            [pt]="selectPt"
             fluid
             formControlName="programId"
             [options]="programs()"
@@ -178,6 +180,7 @@
           ><span>Fecha del contrato <span class="text-red-600" aria-hidden="true">*</span></span
           ><p-datepicker
             fluid
+            [pt]="datePickerPt"
             formControlName="contractDate"
             dateFormat="dd/mm/yy"
             [showIcon]="true"
@@ -199,6 +202,7 @@
           ><span>Fecha salida y retorno <span class="text-red-600" aria-hidden="true">*</span></span
           ><p-datepicker
             fluid
+            [pt]="datePickerPt"
             formControlName="travelRange"
             selectionMode="range"
             dateFormat="dd/mm/yy"
@@ -235,31 +239,44 @@
     <section class="app-panel p-6">
       <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="text-lg font-semibold">Representantes de Giras Indómito</h2>
-        <button pButton type="button" icon="pi pi-plus" severity="secondary" outlined (click)="addRepresentative()">
+        <button
+          pButton
+          type="button"
+          icon="pi pi-plus"
+          severity="secondary"
+          outlined
+          (click)="addRepresentative()"
+        >
           Agregar representante
         </button>
       </div>
       <div formArrayName="representatives" class="space-y-3">
         @for (group of representatives.controls; track group; let i = $index) {
-          <div [formGroupName]="i" class="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_14rem_auto]">
+          <div
+            [formGroupName]="i"
+            class="grid items-start gap-3 md:grid-cols-[minmax(0,1fr)_14rem_auto]"
+          >
             <label class="flex flex-col gap-2"
               ><span>Nombre <span class="text-red-600" aria-hidden="true">*</span></span
               ><input pInputText formControlName="name" placeholder="Nombre completo" /></label
             ><label class="flex flex-col gap-2"
               ><span>RUT <span class="text-red-600" aria-hidden="true">*</span></span
               ><input pInputText formControlName="dni" placeholder="Ej. 12.345.678-5" /></label
-            ><button
-              pButton
-              type="button"
-              severity="danger"
-              outlined
-              icon="pi pi-trash"
-              class="justify-self-start md:justify-self-end"
-              [attr.aria-label]="'Quitar representante ' + (i + 1)"
-              (click)="remove(representatives, i)"
             >
-              Quitar
-            </button>
+            <div class="flex flex-col gap-2 justify-self-start md:justify-self-end">
+              <span class="invisible" aria-hidden="true">Quitar</span>
+              <button
+                pButton
+                type="button"
+                severity="danger"
+                outlined
+                icon="pi pi-trash"
+                [attr.aria-label]="'Quitar representante ' + (i + 1)"
+                (click)="remove(representatives, i)"
+              >
+                Quitar
+              </button>
+            </div>
           </div>
         }
       </div>
@@ -268,13 +285,23 @@
     <section class="app-panel p-6">
       <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="text-lg font-semibold">Representantes del cliente</h2>
-        <button pButton type="button" icon="pi pi-plus" severity="secondary" outlined (click)="addRepresentative(true)">
+        <button
+          pButton
+          type="button"
+          icon="pi pi-plus"
+          severity="secondary"
+          outlined
+          (click)="addRepresentative(true)"
+        >
           Agregar representante
         </button>
       </div>
       <div formArrayName="clientRepresentatives" class="space-y-3">
         @for (group of clientRepresentatives.controls; track group; let i = $index) {
-          <div [formGroupName]="i" class="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_14rem_minmax(0,1fr)_auto]">
+          <div
+            [formGroupName]="i"
+            class="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_14rem_minmax(0,1fr)_auto]"
+          >
             <label class="flex flex-col gap-2"
               ><span>Nombre <span class="text-red-600" aria-hidden="true">*</span></span
               ><input pInputText formControlName="name" placeholder="Nombre completo" /></label
@@ -284,18 +311,21 @@
             ><label class="flex flex-col gap-2"
               ><span>Curso <span class="text-red-600" aria-hidden="true">*</span></span
               ><input pInputText formControlName="course" placeholder="Ej. 4° medio A" /></label
-            ><button
-              pButton
-              type="button"
-              severity="danger"
-              outlined
-              icon="pi pi-trash"
-              class="justify-self-start xl:justify-self-end"
-              [attr.aria-label]="'Quitar representante del cliente ' + (i + 1)"
-              (click)="remove(clientRepresentatives, i)"
             >
-              Quitar
-            </button>
+            <div class="flex flex-col gap-2 justify-self-start xl:justify-self-end">
+              <span class="invisible" aria-hidden="true">Quitar</span>
+              <button
+                pButton
+                type="button"
+                severity="danger"
+                outlined
+                icon="pi pi-trash"
+                [attr.aria-label]="'Quitar representante del cliente ' + (i + 1)"
+                (click)="remove(clientRepresentatives, i)"
+              >
+                Quitar
+              </button>
+            </div>
           </div>
         }
       </div>
@@ -304,24 +334,46 @@
     <section class="app-panel p-6" formGroupName="plan">
       <label class="flex flex-col gap-2 mb-5"
         ><span>Nombre de la cotización <span class="text-red-600" aria-hidden="true">*</span></span
-        ><input pInputText formControlName="name" placeholder="Nombre de la cotización seleccionada"
+        ><input
+          pInputText
+          formControlName="name"
+          placeholder="Nombre de la cotización seleccionada"
       /></label>
       <div class="mb-4 flex items-center justify-between">
         <h2 class="text-lg font-semibold">
           Servicios incluidos <span class="text-red-600" aria-hidden="true">*</span>
         </h2>
-        <button pButton type="button" icon="pi pi-plus" severity="secondary" outlined (click)="addService()">Agregar servicio</button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-plus"
+          severity="secondary"
+          outlined
+          (click)="addService()"
+        >
+          Agregar servicio
+        </button>
       </div>
       <div formArrayName="servicesIncluded" class="space-y-3">
         @for (group of services.controls; track group; let i = $index) {
-          <div [formGroupName]="i" class="flex gap-3">
-            <input
-              pInputText
-              formControlName="description"
-              class="w-full"
-              placeholder="Descripción del servicio incluido"
-            />
-            <button pButton type="button" severity="danger" outlined icon="pi pi-trash" [attr.aria-label]="'Quitar servicio ' + (i + 1)" (click)="remove(services, i)">
+          <div [formGroupName]="i" class="flex items-start gap-3">
+            <div class="flex w-full flex-col gap-1">
+              <input
+                pInputText
+                formControlName="description"
+                class="w-full"
+                placeholder="Descripción del servicio incluido"
+              />
+            </div>
+            <button
+              pButton
+              type="button"
+              severity="danger"
+              outlined
+              icon="pi pi-trash"
+              [attr.aria-label]="'Quitar servicio ' + (i + 1)"
+              (click)="remove(services, i)"
+            >
               Quitar
             </button>
           </div>
@@ -481,6 +533,7 @@
         <label class="flex flex-col gap-2"
           ><span>Inicio pago cuotas <span class="text-red-600" aria-hidden="true">*</span></span
           ><p-select
+            [pt]="selectPt"
             fluid
             formControlName="startMonth"
             [options]="months"
@@ -587,6 +640,7 @@
       <label class="flex flex-col gap-2 max-w-xl"
         ><span>Cuenta para pagos <span class="text-red-600" aria-hidden="true">*</span></span
         ><p-select
+          [pt]="selectPt"
           fluid
           formControlName="bankAccountId"
           [options]="configuration()?.bankAccounts ?? []"
@@ -602,7 +656,16 @@
     <section class="app-panel p-6">
       <div class="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="text-lg font-semibold">Nómina de pasajeros</h2>
-        <button pButton type="button" icon="pi pi-plus" severity="secondary" outlined (click)="addPassenger()">Agregar pasajero</button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-plus"
+          severity="secondary"
+          outlined
+          (click)="addPassenger()"
+        >
+          Agregar pasajero
+        </button>
       </div>
       <p class="mb-5 text-sm text-muted">
         Obligatoria. Esta tabla se insertará después de la cláusula VIGÉSIMO SEGUNDO.
@@ -611,7 +674,7 @@
         @for (group of passengers.controls; track group; let i = $index) {
           <div
             [formGroupName]="i"
-            class="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_11rem_11rem_10rem_11rem_auto]"
+            class="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_11rem_11rem_10rem_11rem_auto]"
           >
             <label class="flex flex-col gap-2"
               ><span>Nombres <span class="text-red-600" aria-hidden="true">*</span></span
@@ -633,9 +696,11 @@
                 >Fecha de nacimiento <span class="text-red-600" aria-hidden="true">*</span></span
               ><p-datepicker
                 fluid
+                [pt]="datePickerPt"
                 formControlName="birthDate"
                 dateFormat="dd/mm/yy"
                 [maxDate]="maxBirthDate"
+                [defaultDate]="defaultBirthDate"
                 [showIcon]="true"
                 [appendTo]="'body'"
                 placeholder="Seleccionar fecha"
@@ -643,6 +708,7 @@
             ><label class="flex flex-col gap-2"
               ><span>Nacionalidad <span class="text-red-600" aria-hidden="true">*</span></span
               ><p-select
+                [pt]="selectPt"
                 fluid
                 formControlName="nationality"
                 [options]="configuration()?.countries ?? []"
@@ -657,6 +723,7 @@
             ><label class="flex flex-col gap-2"
               ><span>Sexo <span class="text-red-600" aria-hidden="true">*</span></span
               ><p-select
+                [pt]="selectPt"
                 fluid
                 formControlName="sex"
                 [options]="sexOptions"
@@ -665,18 +732,21 @@
                 placeholder="Seleccionar"
                 [appendTo]="'body'"
               /> </label
-            ><button
-              pButton
-              type="button"
-              severity="danger"
-              outlined
-              icon="pi pi-trash"
-              class="justify-self-start xl:justify-self-end"
-              [attr.aria-label]="'Quitar pasajero ' + (i + 1)"
-              (click)="remove(passengers, i)"
             >
-              Quitar
-            </button>
+            <div class="flex flex-col gap-2 justify-self-start xl:justify-self-end">
+              <span class="invisible" aria-hidden="true">Quitar</span>
+              <button
+                pButton
+                type="button"
+                severity="danger"
+                outlined
+                icon="pi pi-trash"
+                [attr.aria-label]="'Quitar pasajero ' + (i + 1)"
+                (click)="remove(passengers, i)"
+              >
+                Quitar
+              </button>
+            </div>
           </div>
         }
       </div>

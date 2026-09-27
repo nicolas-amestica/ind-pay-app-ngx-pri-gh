@@ -27,6 +27,7 @@ import { FavoritesService } from '../../../programs/services/favorites.service';
 import { calculateContractPayments } from '../../fn/calculate-contract-payments';
 import { birthDateValidator, rutValidator } from '../../fn/contract-validators';
 import { getInvalidContractFields } from '../../fn/get-invalid-contract-fields';
+import { reconcileFormArray } from '../../fn/reconcile-form-array';
 import { RequiredFieldMessageDirective } from '../../directives/required-field-message.directive';
 import { CONTRACT_MONTHS, CONTRACT_SEX_OPTIONS } from '../../constants/contract-options';
 import type {
@@ -80,6 +81,18 @@ export class ContractFormPage {
   protected readonly months = CONTRACT_MONTHS;
   protected readonly sexOptions = CONTRACT_SEX_OPTIONS;
   protected readonly maxBirthDate = new Date();
+  protected readonly defaultBirthDate = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 17);
+    return d;
+  })();
+  protected readonly datePickerPt = {
+    panel: { class: 'border-line/55!' },
+  } as const;
+  protected readonly selectPt = {
+    overlay: { class: 'border-line/55!' },
+    listContainer: { class: 'border-line/55!' },
+  } as const;
   private readonly programReference = signal<ContractProgramReference | null>(null);
 
   protected readonly form = this.fb.group({
@@ -553,9 +566,7 @@ export class ContractFormPage {
     });
   }
   private replaceArray<T>(array: FormArray, values: T[], build: (value: T) => FormGroup): void {
-    array.clear();
-    for (const value of values) array.push(build(value));
-    if (array.length === 0) array.push(build({} as T));
+    reconcileFormArray(array, values, build);
   }
 
   private serviceGroup(description = ''): FormGroup {
