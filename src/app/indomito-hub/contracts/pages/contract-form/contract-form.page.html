@@ -674,8 +674,14 @@
         @for (group of passengers.controls; track group; let i = $index) {
           <div
             [formGroupName]="i"
-            class="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_11rem_11rem_10rem_11rem_auto]"
+            class="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-[3rem_1fr_1fr_11rem_11rem_10rem_11rem_auto]"
           >
+            <div class="flex flex-col gap-2">
+              <span>N°</span>
+              <div class="flex h-10 items-center justify-center rounded-md bg-canvas border border-line text-sm font-medium">
+                {{ i + 1 }}
+              </div>
+            </div>
             <label class="flex flex-col gap-2"
               ><span>Nombres <span class="text-red-600" aria-hidden="true">*</span></span
               ><input
