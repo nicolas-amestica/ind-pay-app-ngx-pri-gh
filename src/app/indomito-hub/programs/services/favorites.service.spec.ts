@@ -3,7 +3,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../../environments/environment';
-import type { Favorite, FavoriteUpsertRequest } from '../interfaces/favorite.interface';
+import type {
+  Favorite,
+  FavoriteSummary,
+  FavoriteUpsertRequest,
+} from '../interfaces/favorite.interface';
 import { FavoritesService } from './favorites.service';
 
 describe('FavoritesService', () => {
@@ -22,7 +26,7 @@ describe('FavoritesService', () => {
 
   it('lista y desenvuelve los favoritos del scope', () => {
     const favorite = sampleFavorite();
-    let received: Favorite[] | undefined;
+    let received: FavoriteSummary[] | undefined;
 
     service.list('cotizacion').subscribe((value) => (received = value));
     const request = http.expectOne(
@@ -34,6 +38,18 @@ describe('FavoritesService', () => {
     request.flush({ data: [favorite] });
 
     expect(received).toEqual([favorite]);
+  });
+
+  it('obtiene el contenido completo de una cotización por identificador', () => {
+    const favorite = sampleFavorite();
+    let received: Favorite | undefined;
+
+    service.get('01/a').subscribe((value) => (received = value));
+    const request = http.expectOne(`${environment.apiUrl}/cotizaciones/01%2Fa`);
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: favorite });
+
+    expect(received).toEqual(favorite);
   });
 
   it('crea y actualiza con el mismo cuerpo persistible', () => {

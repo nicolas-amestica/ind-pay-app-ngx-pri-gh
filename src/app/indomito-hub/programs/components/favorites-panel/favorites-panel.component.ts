@@ -6,7 +6,7 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
-import type { Favorite, FavoriteScope } from '../../interfaces/favorite.interface';
+import type { Favorite, FavoriteScope, FavoriteSummary } from '../../interfaces/favorite.interface';
 import { exchangeRateOriginLabel } from '../../fn/fn-exchange-rate-source';
 import { MotionPressDirective } from '../../../../shared/ui/motion-press.directive';
 import { SideDrawerComponent } from '../../../../shared/ui/side-drawer.component';
@@ -30,9 +30,10 @@ import { trimmedRequiredValidator } from '../../validators/trimmed-required.vali
 })
 export class FavoritesPanelComponent {
   readonly scope = input.required<FavoriteScope>();
-  readonly favorites = input.required<readonly Favorite[]>();
+  readonly favorites = input.required<readonly FavoriteSummary[]>();
   readonly totalFavoriteCount = input(0);
   readonly selectedFavorite = input<Favorite | null>(null);
+  readonly previewFavorite = input<Favorite | null>(null);
   readonly loading = input(false);
   readonly busy = input(false);
   readonly hasError = input(false);
@@ -43,12 +44,13 @@ export class FavoritesPanelComponent {
 
   readonly retryRequested = output<void>();
   readonly searchChanged = output<string>();
-  readonly favoriteSelected = output<Favorite>();
-  readonly favoriteDeleted = output<Favorite>();
+  readonly favoriteSelected = output<FavoriteSummary>();
+  readonly favoritePreviewRequested = output<FavoriteSummary>();
+  readonly favoriteDeleted = output<FavoriteSummary>();
   readonly saveSubmitted = output<string>();
 
-  protected readonly previewFavorite = signal<Favorite | null>(null);
-  protected readonly deleteCandidate = signal<Favorite | null>(null);
+  protected readonly deleteCandidate = signal<FavoriteSummary | null>(null);
+  readonly previewClosed = output<void>();
   protected readonly exchangeRateOriginLabel = exchangeRateOriginLabel;
   protected readonly favoriteName = new FormControl('', {
     nonNullable: true,

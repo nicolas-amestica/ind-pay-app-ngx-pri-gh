@@ -25,8 +25,10 @@ describe('FavoritesPanelComponent', () => {
     const item = favorite();
     const fixture = createFixture([item]);
     const selected = vi.fn();
+    const previewRequested = vi.fn();
     const deleted = vi.fn();
     fixture.componentInstance.favoriteSelected.subscribe(selected);
+    fixture.componentInstance.favoritePreviewRequested.subscribe(previewRequested);
     fixture.componentInstance.favoriteDeleted.subscribe(deleted);
     await fixture.whenStable();
     const host = fixture.nativeElement as HTMLElement;
@@ -35,6 +37,9 @@ describe('FavoritesPanelComponent', () => {
     buttonNamed(host, 'Visualizar').click();
     await fixture.whenStable();
     expect(selected).toHaveBeenCalledWith(item);
+    expect(previewRequested).toHaveBeenCalledWith(item);
+    fixture.componentRef.setInput('previewFavorite', item);
+    await fixture.whenStable();
     expect(host.textContent).toContain('30 totales');
 
     buttonNamed(host, 'Eliminar').click();

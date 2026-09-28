@@ -112,6 +112,17 @@ export interface Contract {
   approvedAt?: string;
   approvedBy?: string;
 }
+export interface ContractSummary {
+  id: string;
+  planName: string;
+  institutionName: string;
+  destination: string;
+  period: string;
+  passengerCount: number;
+  status: ContractStatus;
+  createdAt: string;
+  updatedAt: string;
+}
 export interface ContractPDFAccess {
   url: string;
   expiresAt: string;

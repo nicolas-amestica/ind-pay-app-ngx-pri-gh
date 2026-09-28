@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import type { ApiSuccessEnvelope } from '../../../core/http/api-response.interface';
 import type {
   Favorite,
+  FavoriteSummary,
   FavoriteScope,
   FavoriteUpsertRequest,
 } from '../interfaces/favorite.interface';
@@ -17,10 +18,17 @@ export class FavoritesService {
   private readonly endpoint = `${environment.apiUrl}/cotizaciones`;
 
   /** Lista la colección del usuario autenticado para el scope indicado. */
-  list(scope: FavoriteScope): Observable<Favorite[]> {
+  list(scope: FavoriteScope): Observable<FavoriteSummary[]> {
     const params = new HttpParams().set('scope', scope);
     return this.http
-      .get<ApiSuccessEnvelope<Favorite[]>>(this.endpoint, { params })
+      .get<ApiSuccessEnvelope<FavoriteSummary[]>>(this.endpoint, { params })
+      .pipe(map(({ data }) => data));
+  }
+
+  /** Obtiene el contenido completo de una cotización solo cuando se necesita. */
+  get(id: string): Observable<Favorite> {
+    return this.http
+      .get<ApiSuccessEnvelope<Favorite>>(`${this.endpoint}/${encodeURIComponent(id)}`)
       .pipe(map(({ data }) => data));
   }
 

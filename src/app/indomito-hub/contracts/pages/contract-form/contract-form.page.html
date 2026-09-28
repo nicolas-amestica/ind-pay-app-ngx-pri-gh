@@ -261,8 +261,8 @@
               ><input pInputText formControlName="name" placeholder="Nombre completo" /></label
             ><label class="flex flex-col gap-2"
               ><span>RUT <span class="text-red-600" aria-hidden="true">*</span></span
-              ><input pInputText formControlName="dni" placeholder="Ej. 12.345.678-5" /></label
-            >
+              ><input pInputText formControlName="dni" placeholder="Ej. 12.345.678-5"
+            /></label>
             <div class="flex flex-col gap-2 justify-self-start md:justify-self-end">
               <span class="invisible" aria-hidden="true">Quitar</span>
               <button
@@ -310,8 +310,8 @@
               ><input pInputText formControlName="dni" placeholder="Ej. 12.345.678-5" /></label
             ><label class="flex flex-col gap-2"
               ><span>Curso <span class="text-red-600" aria-hidden="true">*</span></span
-              ><input pInputText formControlName="course" placeholder="Ej. 4° medio A" /></label
-            >
+              ><input pInputText formControlName="course" placeholder="Ej. 4° medio A"
+            /></label>
             <div class="flex flex-col gap-2 justify-self-start xl:justify-self-end">
               <span class="invisible" aria-hidden="true">Quitar</span>
               <button
@@ -670,91 +670,119 @@
       <p class="mb-5 text-sm text-muted">
         Obligatoria. Esta tabla se insertará después de la cláusula VIGÉSIMO SEGUNDO.
       </p>
-      <div formArrayName="passengers" class="space-y-3">
-        @for (group of passengers.controls; track group; let i = $index) {
-          <div
-            [formGroupName]="i"
-            class="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-[3rem_1fr_1fr_11rem_11rem_10rem_11rem_auto]"
-          >
-            <div class="flex flex-col gap-2">
-              <span>N°</span>
-              <div class="flex h-10 items-center justify-center rounded-md bg-canvas border border-line text-sm font-medium">
-                {{ i + 1 }}
-              </div>
-            </div>
-            <label class="flex flex-col gap-2"
-              ><span>Nombres <span class="text-red-600" aria-hidden="true">*</span></span
-              ><input
-                pInputText
-                formControlName="names"
-                placeholder="Nombres del pasajero" /></label
-            ><label class="flex flex-col gap-2"
-              ><span>Apellidos <span class="text-red-600" aria-hidden="true">*</span></span
-              ><input
-                pInputText
-                formControlName="lastNames"
-                placeholder="Apellidos del pasajero" /></label
-            ><label class="flex flex-col gap-2"
-              ><span>RUT <span class="text-red-600" aria-hidden="true">*</span></span
-              ><input pInputText formControlName="dni" placeholder="Ej. 12.345.678-5" /></label
-            ><label class="flex flex-col gap-2"
-              ><span
-                >Fecha de nacimiento <span class="text-red-600" aria-hidden="true">*</span></span
-              ><p-datepicker
-                fluid
-                [pt]="datePickerPt"
-                formControlName="birthDate"
-                dateFormat="dd/mm/yy"
-                [maxDate]="maxBirthDate"
-                [defaultDate]="defaultBirthDate"
-                [showIcon]="true"
-                [appendTo]="'body'"
-                placeholder="Seleccionar fecha"
-              /> </label
-            ><label class="flex flex-col gap-2"
-              ><span>Nacionalidad <span class="text-red-600" aria-hidden="true">*</span></span
-              ><p-select
-                [pt]="selectPt"
-                fluid
-                formControlName="nationality"
-                [options]="configuration()?.countries ?? []"
-                optionLabel="name"
-                optionValue="name"
-                placeholder="Seleccionar país"
-                [filter]="true"
-                filterBy="name"
-                [loading]="programsLoading()"
-                [appendTo]="'body'"
-              /> </label
-            ><label class="flex flex-col gap-2"
-              ><span>Sexo <span class="text-red-600" aria-hidden="true">*</span></span
-              ><p-select
-                [pt]="selectPt"
-                fluid
-                formControlName="sex"
-                [options]="sexOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Seleccionar"
-                [appendTo]="'body'"
-              /> </label
-            >
-            <div class="flex flex-col gap-2 justify-self-start xl:justify-self-end">
-              <span class="invisible" aria-hidden="true">Quitar</span>
-              <button
-                pButton
-                type="button"
-                severity="danger"
-                outlined
-                icon="pi pi-trash"
-                [attr.aria-label]="'Quitar pasajero ' + (i + 1)"
-                (click)="remove(passengers, i)"
-              >
-                Quitar
-              </button>
-            </div>
-          </div>
-        }
+      <div formArrayName="passengers" class="min-w-0 max-w-full overflow-hidden">
+        <p-table
+          [value]="passengers.controls"
+          [scrollable]="true"
+          [tableStyle]="{ 'min-width': '78rem' }"
+          styleClass="text-sm"
+        >
+          <ng-template #header>
+            <tr>
+              <th class="w-14">N°</th>
+              <th>Nombres <span class="text-red-600" aria-hidden="true">*</span></th>
+              <th>Apellidos <span class="text-red-600" aria-hidden="true">*</span></th>
+              <th class="w-44">RUT <span class="text-red-600" aria-hidden="true">*</span></th>
+              <th class="w-48">
+                Nacimiento <span class="text-red-600" aria-hidden="true">*</span>
+              </th>
+              <th class="w-44">
+                Nacionalidad <span class="text-red-600" aria-hidden="true">*</span>
+              </th>
+              <th class="w-40">Sexo <span class="text-red-600" aria-hidden="true">*</span></th>
+              <th class="w-32" aria-label="Acciones"></th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-group let-i="rowIndex">
+            <tr [formGroupName]="i">
+              <td class="text-center font-medium">{{ i + 1 }}</td>
+              <td>
+                <input
+                  pInputText
+                  class="w-full"
+                  formControlName="names"
+                  [attr.aria-label]="'Nombres del pasajero ' + (i + 1)"
+                  placeholder="Nombres"
+                />
+              </td>
+              <td>
+                <input
+                  pInputText
+                  class="w-full"
+                  formControlName="lastNames"
+                  [attr.aria-label]="'Apellidos del pasajero ' + (i + 1)"
+                  placeholder="Apellidos"
+                />
+              </td>
+              <td>
+                <input
+                  pInputText
+                  class="w-full"
+                  formControlName="dni"
+                  [attr.aria-label]="'RUT del pasajero ' + (i + 1)"
+                  placeholder="12.345.678-5"
+                />
+              </td>
+              <td>
+                <p-datepicker
+                  fluid
+                  [pt]="datePickerPt"
+                  formControlName="birthDate"
+                  dateFormat="dd/mm/yy"
+                  [maxDate]="maxBirthDate"
+                  [defaultDate]="defaultBirthDate"
+                  [showIcon]="true"
+                  [appendTo]="'body'"
+                  [attr.aria-label]="'Fecha de nacimiento del pasajero ' + (i + 1)"
+                  placeholder="Seleccionar"
+                />
+              </td>
+              <td>
+                <p-select
+                  [pt]="selectPt"
+                  fluid
+                  formControlName="nationality"
+                  [options]="configuration()?.countries ?? []"
+                  optionLabel="name"
+                  optionValue="name"
+                  placeholder="Seleccionar"
+                  [filter]="true"
+                  filterBy="name"
+                  [loading]="programsLoading()"
+                  [appendTo]="'body'"
+                  [attr.aria-label]="'Nacionalidad del pasajero ' + (i + 1)"
+                />
+              </td>
+              <td>
+                <p-select
+                  [pt]="selectPt"
+                  fluid
+                  formControlName="sex"
+                  [options]="sexOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Seleccionar"
+                  [appendTo]="'body'"
+                  [attr.aria-label]="'Sexo del pasajero ' + (i + 1)"
+                />
+              </td>
+              <td class="text-right">
+                <button
+                  pButton
+                  type="button"
+                  severity="danger"
+                  outlined
+                  icon="pi pi-trash"
+                  size="small"
+                  [attr.aria-label]="'Quitar pasajero ' + (i + 1)"
+                  (click)="remove(passengers, i)"
+                >
+                  Quitar
+                </button>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
       </div>
     </section>
   </form>

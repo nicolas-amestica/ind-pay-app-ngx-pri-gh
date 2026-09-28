@@ -6,6 +6,7 @@ import type {
   Favorite,
   FavoriteContent,
   FavoriteScope,
+  FavoriteSummary,
   FavoriteUpsertRequest,
 } from '../interfaces/favorite.interface';
 import { FavoritesService } from '../services/favorites.service';
@@ -16,14 +17,16 @@ export class FavoritesStore {
   private readonly service = inject(FavoritesService);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly favoriteState = signal<Favorite[]>([]);
+  private readonly favoriteState = signal<FavoriteSummary[]>([]);
   private readonly selectedState = signal<Favorite | null>(null);
+  private readonly previewState = signal<Favorite | null>(null);
   private readonly loadingState = signal(false);
   private readonly mutatingState = signal(false);
   private readonly errorState = signal<unknown | null>(null);
 
   readonly favorites = this.favoriteState.asReadonly();
   readonly selected = this.selectedState.asReadonly();
+  readonly preview = this.previewState.asReadonly();
   readonly loading = this.loadingState.asReadonly();
   readonly mutating = this.mutatingState.asReadonly();
   readonly error = this.errorState.asReadonly();
@@ -56,6 +59,17 @@ export class FavoritesStore {
     this.selectedState.set(favorite);
   }
 
+  selectPreview(favorite: Favorite | null): void {
+    this.previewState.set(favorite);
+  }
+
+  /** Obtiene el registro completo para seleccionar o visualizar una cotización. */
+  get(summary: FavoriteSummary): Observable<Favorite> {
+    this.mutatingState.set(true);
+    this.errorState.set(null);
+    return this.service.get(summary.id).pipe(finalize(() => this.mutatingState.set(false)));
+  }
+
   /**
    * Crea o actualiza según el nombre del favorito seleccionado.
    * La comparación ignora mayúsculas y espacios repetidos o exteriores.
@@ -80,7 +94,7 @@ export class FavoritesStore {
   }
 
   /** Elimina el favorito y limpia la selección si correspondía al formulario actual. */
-  delete(favorite: Favorite): Observable<void> {
+  delete(favorite: FavoriteSummary): Observable<void> {
     this.mutatingState.set(true);
     this.errorState.set(null);
     return this.service.delete(favorite.id).pipe(
@@ -100,13 +114,16 @@ export function normalizeFavoriteName(name: string): string {
   return name.trim().replace(/\s+/gu, ' ').toLocaleLowerCase('es-CL');
 }
 
-function filterFavorites(favorites: readonly Favorite[], searchTerm: string): Favorite[] {
+function filterFavorites(
+  favorites: readonly FavoriteSummary[],
+  searchTerm: string,
+): FavoriteSummary[] {
   const normalized = normalizeFavoriteName(searchTerm);
   if (normalized === '') return [...favorites];
   return favorites.filter((favorite) => normalizeFavoriteName(favorite.name).includes(normalized));
 }
 
-function upsertFavorite(favorites: readonly Favorite[], saved: Favorite): Favorite[] {
+function upsertFavorite(favorites: readonly FavoriteSummary[], saved: Favorite): FavoriteSummary[] {
   const existingIndex = favorites.findIndex((favorite) => favorite.id === saved.id);
   if (existingIndex < 0) return [saved, ...favorites];
 

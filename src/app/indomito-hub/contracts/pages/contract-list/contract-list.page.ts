@@ -7,7 +7,7 @@ import { Select } from 'primeng/select';
 import { ButtonDirective } from 'primeng/button';
 import { Table } from 'primeng/table';
 import { finalize } from 'rxjs';
-import type { Contract, ContractStatus } from '../../interfaces/contract.interface';
+import type { ContractStatus, ContractSummary } from '../../interfaces/contract.interface';
 import { ContractsService } from '../../services/contracts.service';
 import { DocumentPreviewService } from '../../../../shared/documents/services/document-preview.service';
 
@@ -27,7 +27,7 @@ export class ContractListPage {
     (_, index) => ({ label: String(2025 + index), value: 2025 + index }),
   );
   protected readonly selectedYear = signal(this.currentYear);
-  protected readonly contracts = signal<Contract[]>([]);
+  protected readonly contracts = signal<ContractSummary[]>([]);
   protected readonly loading = signal(false);
 
   constructor() {
@@ -56,7 +56,7 @@ export class ContractListPage {
       CANCELLED: 'bg-zinc-200 text-zinc-700',
     }[status];
   }
-  protected viewPdf(contract: Contract): void {
+  protected viewPdf(contract: ContractSummary): void {
     this.loading.set(true);
     this.api
       .getApprovedPdf(contract.id)
@@ -67,7 +67,7 @@ export class ContractListPage {
       .subscribe(({ url }) =>
         this.documentPreview.open({
           title: 'Contrato aprobado',
-          description: `${contract.content.institution.name} · ${contract.content.trip.destination}`,
+          description: `${contract.institutionName} · ${contract.destination}`,
           documents: [
             { name: 'contrato-prestacion-servicios.pdf', mimeType: 'application/pdf', source: url },
           ],

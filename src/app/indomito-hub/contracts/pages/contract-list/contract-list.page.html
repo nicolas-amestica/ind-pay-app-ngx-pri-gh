@@ -47,11 +47,11 @@
       ></ng-template>
       <ng-template #body let-contract
         ><tr>
-          <td class="font-semibold">{{ contract.content.plan.name || 'Sin nombre' }}</td>
-          <td>{{ contract.content.institution.name || 'Sin institución' }}</td>
-          <td>{{ contract.content.trip.destination || 'Sin destino' }}</td>
+          <td class="font-semibold">{{ contract.planName || 'Sin nombre' }}</td>
+          <td>{{ contract.institutionName || 'Sin institución' }}</td>
+          <td>{{ contract.destination || 'Sin destino' }}</td>
           <td>{{ contract.period }}</td>
-          <td>{{ contract.content.passengers.length }}</td>
+          <td>{{ contract.passengerCount }}</td>
           <td>
             <span
               class="rounded-full px-3 py-1 text-xs font-semibold"

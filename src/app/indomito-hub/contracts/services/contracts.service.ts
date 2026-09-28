@@ -9,6 +9,7 @@ import type {
   ContractCreateRequest,
   ContractFormConfiguration,
   ContractPDFAccess,
+  ContractSummary,
   ContractUpdateRequest,
 } from '../interfaces/contract.interface';
 
@@ -26,9 +27,9 @@ export class ContractsService {
       .get<ApiSuccessEnvelope<Contract>>(`${this.endpoint}/${encodeURIComponent(id)}`)
       .pipe(map(({ data }) => data));
   }
-  list(year: number): Observable<Contract[]> {
+  list(year: number): Observable<ContractSummary[]> {
     return this.http
-      .get<ApiSuccessEnvelope<Contract[]>>(this.endpoint, {
+      .get<ApiSuccessEnvelope<ContractSummary[]>>(this.endpoint, {
         params: new HttpParams().set('year', String(year)),
       })
       .pipe(map(({ data }) => data));

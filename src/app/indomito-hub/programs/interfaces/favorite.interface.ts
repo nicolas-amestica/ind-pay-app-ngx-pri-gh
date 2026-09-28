@@ -18,14 +18,18 @@ import type {
 /** Colección reutilizable que identifica favoritos de programa. */
 export type FavoriteScope = 'cotizacion';
 
-/** Favorito con el precio y el snapshot de tipo de cambio aceptados. */
-export interface Favorite {
+/** Datos livianos que devuelve el listado de cotizaciones. */
+export interface FavoriteSummary {
   id: string;
   name: string;
   scope: FavoriteScope;
-  content: FavoriteContent;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Favorito con el precio y el snapshot de tipo de cambio aceptados. */
+export interface Favorite extends FavoriteSummary {
+  content: FavoriteContent;
 }
 
 /**

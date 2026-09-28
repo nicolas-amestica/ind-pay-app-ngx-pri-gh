@@ -16,9 +16,10 @@ import { FileUpload } from 'primeng/fileupload';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { Table } from 'primeng/table';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { ContractExcelImporter } from '../../importers/contract-excel.importer';
-import type { Favorite } from '../../../programs/interfaces/favorite.interface';
+import type { Favorite, FavoriteSummary } from '../../../programs/interfaces/favorite.interface';
 import {
   buildEffectiveRates,
   calculateProgram,
@@ -54,6 +55,7 @@ import { APP_MESSAGES } from '../../../../shared/constants/app-messages';
     ReactiveFormsModule,
     RequiredFieldMessageDirective,
     Select,
+    Table,
   ],
   templateUrl: './contract-form.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,7 +77,7 @@ export class ContractFormPage {
   protected readonly version = signal(0);
   protected readonly status = signal<ContractStatus>('DRAFT');
   protected readonly locked = signal(false);
-  protected readonly programs = signal<Favorite[]>([]);
+  protected readonly programs = signal<FavoriteSummary[]>([]);
   protected readonly programsLoading = signal(false);
   protected readonly configuration = signal<ContractFormConfiguration | null>(null);
   protected readonly months = CONTRACT_MONTHS;
@@ -228,8 +230,21 @@ export class ContractFormPage {
       this.programReference.set(null);
       return;
     }
-    const program = this.programs().find(({ id }) => id === programId);
-    if (!program) return;
+    if (!this.programs().some(({ id }) => id === programId)) return;
+    this.programsLoading.set(true);
+    this.favoritesApi
+      .get(programId)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.programsLoading.set(false)),
+      )
+      .subscribe({
+        next: (program) => this.applyProgram(program),
+        error: () => this.notifications.error(APP_MESSAGES.programs.favoriteOperationError),
+      });
+  }
+
+  private applyProgram(program: Favorite): void {
     const content = program.content;
     const exchange = content.pricing.exchange;
     const effectiveRates = exchange ? buildEffectiveRates(content.pricing, exchange) : null;

@@ -35,6 +35,7 @@ describe('ProgramFormPage', () => {
   let generateBudgetPdf: ReturnType<typeof vi.fn>;
   let downloadBudgetPdf: ReturnType<typeof vi.fn>;
   let listFavorites: ReturnType<typeof vi.fn>;
+  let getFavorite: ReturnType<typeof vi.fn>;
   let createFavorite: ReturnType<typeof vi.fn>;
   let updateFavorite: ReturnType<typeof vi.fn>;
   let deleteFavorite: ReturnType<typeof vi.fn>;
@@ -56,6 +57,7 @@ describe('ProgramFormPage', () => {
     generateBudgetPdf = vi.fn(() => of(new Blob([], { type: 'application/pdf' })));
     downloadBudgetPdf = vi.fn();
     listFavorites = vi.fn(() => of([]));
+    getFavorite = vi.fn();
     createFavorite = vi.fn();
     updateFavorite = vi.fn();
     deleteFavorite = vi.fn();
@@ -79,6 +81,7 @@ describe('ProgramFormPage', () => {
           provide: FavoritesService,
           useValue: {
             list: listFavorites,
+            get: getFavorite,
             create: createFavorite,
             update: updateFavorite,
             delete: deleteFavorite,
@@ -247,6 +250,7 @@ describe('ProgramFormPage', () => {
     exchangeResponse$ = of(freshSnapshot());
     catalogResponse$ = of(catalogWithOptions());
     listFavorites.mockReturnValueOnce(of([favorite]));
+    getFavorite.mockReturnValueOnce(of(favorite));
     const fixture = TestBed.createComponent(ProgramFormPage);
     const store = fixture.debugElement.injector.get(ProgramFormStore);
     await fixture.whenStable();

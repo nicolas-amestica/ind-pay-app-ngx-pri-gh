@@ -35,7 +35,7 @@ import { ExcelExporter } from '../../exporters/excel-exporter';
 import { buildExcelLayout } from '../../exporters/excel-layout';
 import { favoriteContentFromProgram } from '../../fn/fn-favorite-content';
 import { exchangeRateSourceLabel } from '../../fn/fn-exchange-rate-source';
-import type { Favorite } from '../../interfaces/favorite.interface';
+import type { FavoriteSummary } from '../../interfaces/favorite.interface';
 import type { BudgetRequest } from '../../interfaces/program.interface';
 import { BudgetPdfService } from '../../services/budget-pdf.service';
 import { CatalogStore } from '../../stores/catalog.store';
@@ -157,14 +157,32 @@ export class ProgramFormPage {
       });
   }
 
-  protected selectFavorite(favorite: Favorite): void {
-    this.programFormStore.loadFavorite(favorite.content);
-    this.favoritesStore.select(favorite);
-    this.favoritesOpen.set(false);
-    this.notifications.success(APP_MESSAGES.programs.favoriteLoaded);
+  protected selectFavorite(summary: FavoriteSummary): void {
+    this.favoritesStore
+      .get(summary)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (favorite) => {
+          this.programFormStore.loadFavorite(favorite.content);
+          this.favoritesStore.select(favorite);
+          this.favoritesOpen.set(false);
+          this.notifications.success(APP_MESSAGES.programs.favoriteLoaded);
+        },
+        error: (error: unknown) => this.notifyUnexpectedFavoriteError(error),
+      });
   }
 
-  protected deleteFavorite(favorite: Favorite): void {
+  protected previewFavorite(summary: FavoriteSummary): void {
+    this.favoritesStore
+      .get(summary)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (favorite) => this.favoritesStore.selectPreview(favorite),
+        error: (error: unknown) => this.notifyUnexpectedFavoriteError(error),
+      });
+  }
+
+  protected deleteFavorite(favorite: FavoriteSummary): void {
     if (this.favoritesStore.mutating()) return;
 
     this.favoritesStore
