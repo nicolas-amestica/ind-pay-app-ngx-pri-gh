@@ -1,6 +1,20 @@
 import { calculateContractPayments } from './calculate-contract-payments';
 
 describe('calculateContractPayments', () => {
+  it('calcula la cuota mensual por pasajero después de dividir el saldo en cuotas', () => {
+    const result = calculateContractPayments({
+      passengerCount: 30,
+      freePassengers: 0,
+      pricePerPerson: 100_000,
+      downPayment: 0,
+      installmentQuantity: 5,
+    });
+
+    expect(result.groupBalance).toBe(3_000_000);
+    expect(result.groupInstallmentValue).toBe(600_000);
+    expect(result.individualInstallmentValue).toBe(20_000);
+  });
+
   it('calcula pagantes, total, saldo y cuotas desde las entradas editables', () => {
     expect(
       calculateContractPayments({
