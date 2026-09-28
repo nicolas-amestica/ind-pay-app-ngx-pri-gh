@@ -51,7 +51,7 @@ Lo que sigue se comprobó leyendo el código, no asumiendo:
 | 2 | Librería de Excel | `write-excel-file`, con carga diferida | [Exportación a Excel](#exportación-a-excel) |
 | 3 | Rangos numéricos | Una sola tabla de límites en TypeScript, y su gemela en `libs/domain/program` | [Límites de campo](#límites-de-campo-compartidos) |
 | 4 | Catálogos y política de empresa | Endpoint propio sobre DynamoDB, una sola consulta, con `CatalogSettings` | [Catálogos](#catálogos-y-parámetros-de-política) |
-| 5 | Porción pasajero-independiente | Tripulación + `fixed` + `per_day` | [Motor de cálculo](#motor-de-cálculo) |
+| 5 | Recuperación de costos con liberados | Todo monto se divide entre pasajeros pagantes | [Motor de cálculo](#motor-de-cálculo) |
 | 6 | Cantidad de motores de cálculo | Uno solo, en TypeScript. El backend maqueta lo que recibe y valida su forma | [PDF de presupuesto](#pdf-de-presupuesto) |
 | 7 | PDF en Go | `signintech/gopdf` con plantillas declarativas propias | [PDF de presupuesto](#pdf-de-presupuesto) |
 | 8 | Separación del backend | Tres módulos Go independientes, tipos compartidos por librería | [Estructura del backend](#estructura-del-backend) |
@@ -677,7 +677,7 @@ export interface CalculationResult {
 export function calculateProgram(input: CalculationInput): CalculationResult;
 export function baseAmount(item: ChargeableItem, schedule: ScheduleInput): number;
 export function buildEffectiveRates(pricing: PricingInput, snapshot: ExchangeSnapshot): EffectiveRates;
-export function perPassengerPrice(amount: number, context: SplitContext): number;
+export function perPassengerPrice(amount: number, payingPassengers: number): number;
 export function calculateScenario(input: CalculationInput, scenario: ScenarioShape): CalculationResult;
 export function deriveScenarios(schedule: ScheduleInput, offsets: number[]): ScenarioShape[];
 ```
@@ -700,7 +700,7 @@ graph LR
     C2["amountCLP por item<br/>base x tasa efectiva"]
     D1["subtotales<br/>CLP · USD · BRL"]
     D2["netCLP<br/>suma redondeada"]
-    D3["particion<br/>independiente / dependiente"]
+    D3["division del monto<br/>entre pagantes"]
     E1["utilityCLP"]
     E2["netWithUtilityCLP"]
     E3["totalCLP"]
@@ -753,8 +753,8 @@ netRaw           = Σ amountCLP(item)            sin redondear
 netCLP           = round(netRaw)
 ```
 
-`netRaw` se conserva sin redondear porque es el denominador de la partición y la
-base de la utilidad. Redondear antes propaga el error a la baja en programas con
+`netRaw` se conserva sin redondear porque es la base de la utilidad. Redondear
+antes propaga el error a la baja en programas con
 muchos ítems.
 
 #### Utilidad, recargo y total
@@ -776,42 +776,21 @@ alteraría los montos de cotizaciones históricas:
 - `rechargeCLP` se obtiene por diferencia y no multiplicando. Eso hace que la
   descomposición cierre exacta por construcción, sin residuo de redondeo.
 
-#### Reparto por persona: la corrección al legacy
+#### Reparto por persona y pasajeros liberados
 
-El problema: un servicio de precio fijo, como el arriendo del bus, cuesta lo mismo
-con 30 pasajeros que con 33. Si su costo se reparte solo entre los pagantes, los
-pagantes subsidian a los liberados en un ítem cuyo costo los liberados no
-provocaron. La solución del legacy es dividir esa porción entre **todos** los
-pasajeros y el resto entre los pagantes.
+Todo costo de la cotización debe recuperarse entre quienes pagan. Que un bus,
+un tripulante o un servicio por día no cambie de precio con la cantidad de
+pasajeros describe cómo se calcula su monto base; no autoriza a dejar sin cobrar
+la parte proporcional de los liberados.
 
 ```text
-independentCLP = Σ amountCLP(item)  donde item es tripulante, `fixed` o `per_day`
-
-si freePassengers == 0  o  netRaw == 0:
-    perPassenger(amount) = ceil(amount / payingPassengers)
-
-en otro caso:
-    independentShare = amount × (independentCLP / netRaw)
-    dependentShare   = amount − independentShare
-    perPassenger(amount) = ceil( independentShare / totalPassengers
-                               + dependentShare  / payingPassengers )
+payingPassengers = max(1, totalPassengers − freePassengers)
+perPassenger(amount) = ceil(amount / payingPassengers)
 ```
 
-**La divergencia.** El legacy construye `independentCLP` filtrando
-`item.type === 'Valor único'`. La tripulación queda fuera, y como el tipo de la
-fila de un tripulante es `'Tripulación'`, su costo cae íntegro en la porción
-dependiente y se reparte solo entre pagantes. Pero el costo de un guía es
-`dailyPrice × totalDays`: no cambia con la cantidad de pasajeros. Es exactamente
-la misma naturaleza que un servicio de precio fijo. Lo mismo pasa con `per_day`,
-un tipo de cobro que el legacy no tiene.
-
-Este diseño incluye tripulación, `fixed` y `per_day` en la porción independiente.
-
-**Efecto en el precio.** El reparto de la porción independiente entre 30 en vez de
-28 la abarata, así que el precio por persona **baja** respecto del legacy. En un
-programa donde la tripulación pesa 15% del neto, con 30 pasajeros y 2 liberados, la
-diferencia es del orden de 1% del precio final. Es una rebaja, no un alza, y el
-solicitante validó explícitamente este cambio el 14 de septiembre de 2026.
+Por ejemplo, un bus de $3.000.000 para 30 pasajeros con 2 liberados produce 28
+pagantes y un precio de `ceil(3.000.000 / 28) = $107.143`. Así el bus se paga
+completo; el excedente máximo queda limitado al efecto del redondeo hacia arriba.
 
 #### Escenarios del presupuesto
 
@@ -1743,8 +1722,6 @@ export interface SummaryRow {
   unitPrice: number;
   baseAmount: number;
   amountCLP: number;
-  /** Verdadero para tripulantes y para `fixed` y `per_day`. */
-  passengerIndependent: boolean;
 }
 
 /** Cantidades de un escenario, antes de calcular su precio. Salida de deriveScenarios. */
@@ -2192,27 +2169,18 @@ puede disminuir el neto, el neto con utilidad ni el total del programa.
 
 **Validates: Requirements 8.1, 8.2, 8.3**
 
-### Property 11: Las dos porciones suman el monto original
-
-*Para todo* monto y todo programa con neto distinto de cero, la porción
-pasajero-independiente más la porción pasajero-dependiente deben sumar exactamente el
-monto original.
-
-**Validates: Requirements 8.7**
-
 ### Property 12: El precio por persona nunca recauda menos que el monto repartido
 
-*Para todo* monto y todo programa, la suma de lo que aporta cada pasajero según el
-reparto debe ser mayor o igual que el monto repartido, de modo que el redondeo hacia
-arriba nunca produzca una pérdida.
+*Para todo* monto y todo programa, el precio por persona multiplicado por los
+pasajeros pagantes debe ser mayor o igual que el monto repartido, de modo que los
+liberados no produzcan una pérdida.
 
 **Validates: Requirements 8.5, 8.6**
 
-### Property 13: Las dos ramas del reparto coinciden cuando no hay liberados
+### Property 13: El precio se divide entre pasajeros pagantes
 
-*Para todo* programa con pasajeros liberados en 0, el precio por persona calculado con
-la fórmula de reparto debe coincidir con el cociente del monto por los pasajeros
-pagantes redondeado hacia arriba.
+*Para todo* programa, con o sin liberados, el precio por persona debe coincidir con
+el cociente del monto por los pasajeros pagantes redondeado hacia arriba.
 
 **Validates: Requirements 8.5, 8.6, 8.8**
 
@@ -2621,9 +2589,8 @@ promedio:
 | `arbScenarioOffsets()` | Listas vacías, un solo desplazamiento, más de cuatro, repetidos, y desplazamientos negativos mayores que los pasajeros del programa |
 | `arbCatalogSettings()` | Con y sin `margin`, con y sin `scenarioOffsets`, `utilityRate` en 0 y por debajo del piso |
 
-El caso de neto 0 se genera de forma explícita porque es donde la fórmula de la
-partición se indefine (Requirement 8.8) y un generador de valores aleatorios en rango
-casi nunca lo produce. `arbScenarioOffsets()` sigue el mismo criterio: los duplicados
+El caso de neto 0 se genera de forma explícita porque un generador de valores
+aleatorios en rango casi nunca lo produce. `arbScenarioOffsets()` sigue el mismo criterio: los duplicados
 tras el acotamiento solo aparecen con programas pequeños y desplazamientos negativos
 grandes, así que el generador los produce a propósito en vez de esperar la
 coincidencia.
@@ -2975,7 +2942,7 @@ desaparecen junto con el motor de cálculo en Go y con el recálculo autoritativ
 
 | # | Asunto | Estado |
 | --- | --- | --- |
-| 1 | **La porción pasajero-independiente cambia los precios.** Incluir tripulación y `per_day` abarata el precio por persona respecto del legacy, del orden de 1% en un programa típico. Es una rebaja, pero es un cambio de precio | Resuelto: variante del diseño validada por el solicitante el 14 de septiembre de 2026 |
+| 1 | **Los liberados deben financiarse sin dejar costos sin recuperar.** Todos los montos, incluidos tripulación, `fixed` y `per_day`, se dividen entre pasajeros pagantes | Resuelto: corrección validada por el solicitante el 28 de septiembre de 2026 |
 | 2 | **La fase 2 depende del servicio de login, que no existe.** Sin `api-auth` no hay authorizer, y sin authorizer no se despliegan los favoritos ni el presupuesto. Como los favoritos son el único mecanismo de persistencia, lo desplegable hoy es una calculadora sin guardar | Punto abierto 2. Necesita planificación propia, fuera de esta spec |
 | 3 | **Carga inicial de los catálogos y de los parámetros.** El Requirement 16 define la lectura de catálogos, margen y desplazamientos, no la escritura de sus datos iniciales | Punto abierto 3. Decidir entre script de siembra y endpoint de administración |
 | 4 | **`libs/` es más trabajo que la feature en sí.** Construir el módulo compartido de Go es un frente completo que condiciona el cronograma. Ahora incluye además `libs/domain/program`, que es lo que sostiene la independencia de los tres servicios | Asumido. Explícito en el trabajo de plataforma |

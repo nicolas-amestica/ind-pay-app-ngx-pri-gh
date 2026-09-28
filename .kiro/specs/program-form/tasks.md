@@ -56,16 +56,15 @@ Consecuencias concretas sobre el plan:
   cálculo reactivo, previsualización y exportación a Excel. La tarea 23.5 implementa el
   aviso al usuario que exige el Requirement 19.7.
 
-### Bloqueo 2 — Porción pasajero-independiente
+### Bloqueo 2 — Recuperación de costos de pasajeros liberados
 
-**Estado: resuelto el 14 de septiembre de 2026 por validación del solicitante.**
+**Estado: corregido el 28 de septiembre de 2026 por validación del solicitante.**
 
-Incluir la tripulación y los servicios `per_day` en la porción pasajero-independiente
-corrige una inconsistencia del legacy, pero **cambia los precios**: el precio por
-persona baja del orden de 1% respecto del comportamiento actual.
+Los pasajeros liberados pagan $0, pero todos los costos del programa deben
+recuperarse entre los pasajeros pagantes.
 
-- La variante validada incluye tripulación y servicios `fixed` y `per_day`.
-- Las tareas 6.1 a 6.6 implementan la decisión en un único predicado y su reparto.
+- La regla incluye tripulación y servicios `fixed`, `per_day` y `per_passenger*`.
+- Las tareas 6.1 a 6.6 implementan y verifican el divisor único por pagantes.
 - La propiedad 14 se corrigió durante la implementación: la monotonía no es un
   invariante válido cuando el redondeo proporcional agrega un liberado. En su lugar,
   verifica que cada escenario reutilice exactamente el motor único, que es lo exigido
@@ -153,11 +152,11 @@ persona baja del orden de 1% respecto del comportamiento actual.
     - _Requirements: 3.2, 3.4, 3.9, 4.6, 4.7_
 
   - [x] 4.5 Implementar `calculateProgram`: filas, subtotales, neto, utilidad, recargo y total
-    - Construir `SummaryRow[]` durante el recorrido, con `key` estable y `passengerIndependent`
+    - Construir `SummaryRow[]` durante el recorrido, con `key` estable
     - `amountCLP = baseAmount × tasa efectiva`; subtotales por moneda; `netRaw` sin redondear y `netCLP` redondeado
     - `utilityCLP = ceil(netRaw × utilityRate / 100)`, `netWithUtilityCLP = netCLP + utilityCLP`
     - `totalCLP = round(netWithUtilityCLP × (1 + rechargeRate / 100))`, `rechargeCLP` por diferencia
-    - Conservar `netRaw` sin redondear: es el denominador de la partición y la base de la utilidad
+    - Conservar `netRaw` sin redondear como base de la utilidad
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 8.1, 8.2, 8.3, 8.4_
 
   - [x]* 4.6 Escribir los tests de propiedad de la conversión y del neto
@@ -179,29 +178,19 @@ persona baja del orden de 1% respecto del comportamiento actual.
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 6. Reparto por persona (repo: **app**)
-  - [x] 6.1 Fijar en código el conjunto de ítems pasajero-independientes
-    - **Validada el 14 de septiembre de 2026 por el solicitante:** la decisión cambia los precios respecto del legacy, del orden de 1% a la baja
-    - Crear `calculation/passenger-independent.ts` con el predicado como único punto de decisión
-    - Variante del diseño: tripulación + `fixed` + `per_day`. Variante legacy: solo `fixed`
-    - Dejar en el Godoc/TSDoc del archivo cuál se validó y con quién, y actualizar el punto abierto 1
-    - _Requirements: 8.7_
-
-  - [x] 6.2 Implementar `per-passenger-split.ts`
-    - `independentCLP` como suma de `amountCLP` de los ítems que el predicado de 6.1 marca
-    - Sin liberados o con `netRaw` en 0: `ceil(amount / payingPassengers)`
-    - Con liberados: `independentShare` entre `totalPassengers`, `dependentShare` entre `payingPassengers`, y `ceil` de la suma
+  - [x] 6.1 Repartir el monto completo entre pasajeros pagantes
+    - **Corregida el 28 de septiembre de 2026 por el solicitante:** los liberados no pagan y su parte se distribuye entre quienes sí pagan
+    - Aplicar `ceil(amount / payingPassengers)` a todos los montos, incluidos tripulación, `fixed` y `per_day`
+    - Eliminar la partición pasajero-independiente, porque permitía recaudar menos que el total
     - _Requirements: 8.5, 8.6, 8.7, 8.8_
-
-  - [x]* 6.3 Escribir el test de propiedad de la partición del monto
-    - `Feature: program-form, Property 11: Las dos porciones suman el monto original`
-    - _Requirements: 8.7_
 
   - [x]* 6.4 Escribir el test de propiedad de la recaudación del reparto
     - `Feature: program-form, Property 12: El precio por persona nunca recauda menos que el monto repartido`
+    - Multiplicar por pasajeros pagantes, no por pasajeros totales
     - _Requirements: 8.5, 8.6_
 
-  - [x]* 6.5 Escribir el test de propiedad de la coincidencia de las dos ramas
-    - `Feature: program-form, Property 13: Las dos ramas del reparto coinciden cuando no hay liberados`
+  - [x]* 6.5 Escribir el test de propiedad del divisor
+    - `Feature: program-form, Property 13: El precio se divide entre pasajeros pagantes`
     - _Requirements: 8.5, 8.6, 8.8_
 
   - [x] 6.6 Integrar el precio por persona en los totales
@@ -783,7 +772,7 @@ graph LR
 
     subgraph W6["Ola 6 · precargas y respaldo de tasas"]
         direction TB
-        T61["6.1 BLOQUEADA · porción independiente"]
+        T61["6.1 reparto entre pagantes"]
         T89["8.9 margin-preload"]
         T811["8.11 nights-preload"]
         T134["13.4 P38"]

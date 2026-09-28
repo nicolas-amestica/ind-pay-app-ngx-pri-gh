@@ -163,8 +163,6 @@ export interface SummaryRow {
   unitPrice: number;
   baseAmount: number;
   amountCLP: number;
-  /** Verdadero para tripulantes y para servicios `fixed` y `per_day`. */
-  passengerIndependent: boolean;
 }
 
 /** Cantidades de un escenario, antes de calcular su precio. Salida de `deriveScenarios`. */

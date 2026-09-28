@@ -23,8 +23,7 @@ import type {
 } from '../interfaces/program.interface';
 import type { CalculationInput, PricingInput, ScheduleInput } from '../types/calculation.types';
 import { type ChargeableItem, baseAmount, isCrewItem } from './charge-type';
-import { isPassengerIndependent } from './passenger-independent';
-import { independentAmountCLP, perPassengerPrice } from './per-passenger-split';
+import { perPassengerPrice } from './per-passenger-split';
 import { ceil, round } from './rounding';
 import {
   DEFAULT_TAX_SETTINGS,
@@ -125,12 +124,8 @@ export interface CalculationResult {
    * la exportación, donde todo monto en CLP es entero. Este número no se muestra:
    * es un insumo del propio motor, y por eso viaja aparte.
    *
-   * Se conserva por dos razones, ambas del diseño:
-   *
-   * 1. Es la base de la utilidad (Requirement 8.1). Redondear antes propaga el
-   *    error a la baja en programas con muchos ítems.
-   * 2. Es el denominador de la partición pasajero-independiente
-   *    (Requirement 8.7), que la tarea 6.2 implementa sobre este valor.
+   * Es la base de la utilidad (Requirement 8.1). Redondear antes propaga el
+   * error a la baja en programas con muchos ítems.
    */
   netRaw: number;
 }
@@ -220,13 +215,10 @@ export function calculateProgram(
   const netWithUtilityCLP = netCLP + utilityCLP;
   const totalCLP = round(netWithUtilityCLP * (1 + pricing.rechargeRate / 100));
   const rechargeCLP = totalCLP - netWithUtilityCLP;
-  const splitContext = {
-    totalPassengers: schedule.totalPassengers,
-    freePassengers: schedule.freePassengers,
-    payingPassengers: derivePayingPassengers(schedule.totalPassengers, schedule.freePassengers),
-    independentCLP: independentAmountCLP(rows),
-    netRaw,
-  };
+  const payingPassengers = derivePayingPassengers(
+    schedule.totalPassengers,
+    schedule.freePassengers,
+  );
 
   return {
     rows,
@@ -242,10 +234,10 @@ export function calculateProgram(
       crewWithholdingRate: taxes.crewWithholdingRate,
       utilityCLP,
       netWithUtilityCLP,
-      netWithUtilityPerPassengerCLP: perPassengerPrice(netWithUtilityCLP, splitContext),
+      netWithUtilityPerPassengerCLP: perPassengerPrice(netWithUtilityCLP, payingPassengers),
       rechargeCLP,
       totalCLP,
-      totalPerPassengerCLP: perPassengerPrice(totalCLP, splitContext),
+      totalPerPassengerCLP: perPassengerPrice(totalCLP, payingPassengers),
     },
   };
 }
@@ -299,7 +291,6 @@ function buildRow(
     // Requirement 7.1. Sin redondear: el redondeo del dinero ocurre una sola vez,
     // sobre el neto.
     amountCLP: base * effectiveRate,
-    passengerIndependent: isPassengerIndependent(item),
   };
 }
 

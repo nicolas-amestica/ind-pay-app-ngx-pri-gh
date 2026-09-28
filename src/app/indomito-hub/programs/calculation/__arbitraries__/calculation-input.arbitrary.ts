@@ -1,9 +1,8 @@
 /**
  * Generadores de la entrada completa del motor de cálculo.
  *
- * El caso de neto 0 se genera de forma explícita. Es donde la fórmula de la
- * partición se indefine —divide por el neto sin redondear (Requirement 8.7)— y
- * donde el Requirement 8.8 obliga a un camino distinto. Sortear precios en
+ * El caso de neto 0 se genera de forma explícita para cubrir el límite inferior
+ * del cálculo. Sortear precios en
  * `[0,01, 99.999.999]` casi nunca produce una suma exacta de 0, así que esperar a
  * que aparezca por azar equivale a no probarlo.
  */

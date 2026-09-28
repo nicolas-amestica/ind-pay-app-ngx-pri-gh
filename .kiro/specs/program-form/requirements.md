@@ -74,7 +74,6 @@ contra el servidor local (`make dev`). El motivo está en el Requirement 19.
 - **Tipo de cobro** (`charge_type`): regla que determina el multiplicador aplicado al precio unitario de un servicio. Valores: `fixed`, `per_passenger`, `per_passenger_night`, `per_day`, `per_passenger_day`.
 - **Pasajero liberado** (`free_passenger`): pasajero que viaja sin pagar. Consume los servicios pero no participa en el reparto del precio por persona.
 - **Pasajero pagante** (`paying_passenger`): resultado de `totalPassengers − freePassengers`, con mínimo 1.
-- **Ítem pasajero-independiente**: tripulante, o servicio cuyo tipo de cobro es `fixed` o `per_day`. Su costo no varía con la cantidad de pasajeros.
 - **Ítem pasajero-dependiente**: servicio cuyo tipo de cobro es `per_passenger`, `per_passenger_night` o `per_passenger_day`.
 - **Tasa del día** (`daily_rate`): valor en CLP de una unidad de USD o de BRL, obtenido del backend al abrir el formulario.
 - **Incremento de divisa** (`currency_increase`): monto absoluto en CLP que se **suma** a la tasa del día para obtener la tasa efectiva de conversión. Resguarda a la empresa frente a un alza del tipo de cambio entre la cotización y el pago real al proveedor.
@@ -460,26 +459,18 @@ les corresponden. Una divergencia entre capas es un defecto.
 2. THE Calculation_Engine SHALL calcular el neto con utilidad como la suma del neto redondeado y la utilidad en CLP.
 3. THE Calculation_Engine SHALL calcular el total del programa como el producto del neto con utilidad por la suma de 1 y el porcentaje de recargo dividido por 100, redondeado al entero más cercano.
 4. THE Calculation_Engine SHALL calcular el recargo en CLP como la diferencia entre el total del programa y el neto con utilidad.
-5. WHEN la cantidad de pasajeros liberados es 0, THE Calculation_Engine SHALL calcular el precio por persona de un monto como el cociente de ese monto por los pasajeros pagantes, redondeado hacia arriba al entero más cercano.
-6. WHEN la cantidad de pasajeros liberados es mayor que 0, THE Calculation_Engine SHALL calcular el precio por persona de un monto repartiendo la porción del monto que corresponde a ítems pasajero-independientes entre la cantidad total de pasajeros y la porción restante entre los pasajeros pagantes, y SHALL redondear la suma de ambas porciones hacia arriba al entero más cercano.
-7. THE Calculation_Engine SHALL determinar la porción pasajero-independiente de un monto como el producto de ese monto por el cociente entre la suma de los montos en CLP de los ítems pasajero-independientes y el neto sin redondear.
-8. IF el neto sin redondear es 0, THEN THE Calculation_Engine SHALL calcular el precio por persona como el cociente del monto por los pasajeros pagantes, redondeado hacia arriba al entero más cercano.
+5. THE Calculation_Engine SHALL calcular el precio por persona de un monto como el cociente de ese monto por los pasajeros pagantes, redondeado hacia arriba al entero más cercano.
+6. WHEN existan pasajeros liberados, THE Calculation_Engine SHALL repartir entre los pasajeros pagantes el monto completo, incluidos los costos de tripulación y los servicios `fixed` y `per_day`.
+7. THE Calculation_Engine SHALL garantizar que el precio por persona multiplicado por los pasajeros pagantes sea mayor o igual que el monto repartido.
+8. IF el monto es 0, THEN THE Calculation_Engine SHALL calcular el precio por persona como 0.
 9. THE Calculation_Engine SHALL exponer el precio por persona del neto con utilidad y el precio por persona del total del programa.
 10. WHEN cambia cualquier campo que participa en el cálculo, THE Calculation_Engine SHALL recalcular todos los montos derivados antes del siguiente ciclo de renderizado.
 
-> **Cambio respecto del legacy, validado el 14 de septiembre de 2026.** En el legacy la
-> porción pasajero-independiente incluye únicamente los servicios de tipo "Valor único":
-> la tripulación se reparte solo entre los pagantes, pese a que su costo es
-> `precio diario × días totales` y por lo tanto tampoco depende de la cantidad de
-> pasajeros. Los criterios 6 y 7 corrigen esa inconsistencia e incluyen en la porción
-> pasajero-independiente a la tripulación y a los servicios de tipo `fixed` y `per_day`.
->
-> **Efecto en el precio**: repartir esa porción entre todos los pasajeros y no solo entre
-> los pagantes la abarata, así que el precio por persona **baja** respecto del legacy. En
-> un programa donde la tripulación pesa un 15% del neto, con 30 pasajeros y 2 liberados,
-> la diferencia es del orden del 1% del precio final. Es una rebaja, pero es un cambio de
-> precio. El solicitante confirmó implementar la variante corregida: tripulación,
-> `fixed` y `per_day` son pasajero-independientes.
+> **Corrección validada el 28 de septiembre de 2026.** Que un costo sea independiente
+> de la cantidad de pasajeros significa que su monto no cambia, no que una parte quede
+> sin cobrar. Un bus de $3.000.000 para 30 pasajeros con 2 liberados se divide entre
+> los 28 pagantes. Los liberados pagan $0 y el precio individual recupera el monto
+> completo entre quienes sí pagan.
 
 ### Requirement 9: Tabla de resumen reactiva
 
@@ -800,7 +791,7 @@ les corresponden. Una divergencia entre capas es un defecto.
 | #   | Duda                                     | Resolución                                                                                                                                                                                                                                                                                                                                       |
 | --- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1   | Semántica del incremento de divisa       | Monto absoluto en CLP que se suma a la tasa del día. El ejemplo numérico original tenía un error aritmético; el criterio correcto quedó en el Requirement 4.                                                                                                                                                                                     |
-| 2   | Tratamiento de pasajeros liberados       | El costo de los servicios por pasajero usa el total de pasajeros; el precio por persona se divide entre los pagantes, salvo la porción pasajero-independiente que se divide entre todos.                                                                                                                                                         |
+| 2   | Tratamiento de pasajeros liberados       | El costo de los servicios por pasajero usa el total de pasajeros, incluidos los liberados; el monto completo de la cotización se divide entre los pasajeros pagantes.                                                                                                                                                                           |
 | 3   | Base de utilidad y recargo               | La utilidad se calcula sobre el neto; el recargo se calcula sobre neto más utilidad (compuesto).                                                                                                                                                                                                                                                 |
 | 4   | IVA y retención de honorarios            | Los precios ingresados ya incluyen ambos conceptos. El resumen desglosa informativamente el IVA contenido en servicios (`19/119`) y la retención 2026 contenida en el total bruto de tripulación (`15,25%`), sin volver a sumarlos al total. No se reincorpora un flag de exención por fila.                                                     |
 | 5   | Origen de los tipos de cambio            | Endpoint Go propio que replica el comportamiento del handler legacy: consulta la fuente externa, redondea y expone fecha y valores.                                                                                                                                                                                                              |
@@ -820,11 +811,11 @@ les corresponden. Una divergencia entre capas es un defecto.
 | 19  | Persistencia del programa                | Fuera del alcance. Se eliminan `POST /programas`, la clave de idempotencia, `TOTALS_MISMATCH` y el diálogo de confirmación. Los favoritos pasan a ser la única forma de guardar un programa, y lo desplegable hoy es una calculadora sin guardar. Ver Requirements 10, 11 y 19, y el punto abierto 5.                                            |
 | 20  | Mejoras aprobadas al formulario          | Cuatro: parámetros de margen precargados desde el catálogo con piso de utilidad advertido (Requirement 4), respaldo de tasas por indisponibilidad de la fuente (Requirements 1, 9 y 14), noches de estadía precargadas y sobrescribibles (Requirement 3), y escenarios del presupuesto derivados de los pasajeros del programa (Requirement 13). |
 | 21  | Un solo motor de cálculo                 | El motor en Go se elimina, junto con los vectores de cálculo compartidos, su script de sincronía y el anclaje de versión entre motores. El `Budget_Pdf_Endpoint` maqueta los precios que recibe y valida su forma. El riesgo asumido y su control humano están en el Requirement 18.                                                             |
-| 22  | Porción pasajero-independiente           | Validada por el solicitante el 14 de septiembre de 2026: incluye tripulación y servicios `fixed` y `per_day`, aceptando la rebaja respecto del legacy.                                                                                                                                                                                           |
+| 22  | Recuperación del monto completo          | Corregida por el solicitante el 28 de septiembre de 2026: todos los costos se recuperan entre los pasajeros pagantes, incluidos tripulación, `fixed` y `per_day`.                                                                                                                                                                                |
 
 ## Puntos abiertos
 
-El punto 1, **porción pasajero-independiente**, quedó resuelto el 14 de septiembre de 2026 con la decisión 22.
+El punto 1, **recuperación del monto completo**, quedó corregido el 28 de septiembre de 2026 con la decisión 22.
 
 2. **Servicio de login.** El Requirement 19 bloquea el despliegue del CRUD de favoritos y del presupuesto hasta que exista el authorizer, que a su vez depende del servicio de login (`services/api-auth`, aún sin crear). Esa dependencia está fuera del alcance de esta spec y necesita su propia planificación. Mientras siga abierta, lo desplegable es una calculadora sin guardar.
 3. **Carga inicial de los catálogos y de los parámetros.** El Requirement 16 define cómo se leen los catálogos, los valores por defecto de margen, el piso de utilidad y los desplazamientos de escenario, pero no cómo se cargan sus datos iniciales en DynamoDB. Queda por definir si se resuelve con un script de siembra o con un endpoint de administración.

@@ -266,6 +266,29 @@ describe('calculateProgram — casos límite', () => {
     expect(result.totals.totalPerPassengerCLP).toBe(1_000);
   });
 
+  it('reparte un cargo fijo completo entre los pasajeros pagantes', () => {
+    const result = calculateProgram({
+      ...MINIMAL_PROGRAM,
+      schedule: {
+        ...MINIMAL_PROGRAM.schedule,
+        totalPassengers: 30,
+        freePassengers: 2,
+      },
+      services: [
+        {
+          name: 'Bus',
+          chargeType: 'fixed',
+          unitPrice: 3_000_000,
+          currency: 'CLP',
+        },
+      ],
+    });
+
+    expect(result.totals.totalCLP).toBe(3_000_000);
+    expect(result.totals.totalPerPassengerCLP).toBe(107_143);
+    expect(result.totals.totalPerPassengerCLP * 28).toBeGreaterThanOrEqual(3_000_000);
+  });
+
   it('conserva los precios mínimos antes del redondeo final a CLP', () => {
     const result = calculateProgram({
       ...MINIMAL_PROGRAM,

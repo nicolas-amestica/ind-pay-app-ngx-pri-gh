@@ -42,7 +42,6 @@ function summaryRow(index: number, kind: SummaryRow['kind'] = 'service'): Summar
     unitPrice: kind === 'crew' ? 45_000 : 55,
     baseAmount: kind === 'crew' ? 315_000 : 1_650,
     amountCLP: kind === 'crew' ? 315_000 : 1_650_000,
-    passengerIndependent: kind === 'crew',
   };
 }
 
