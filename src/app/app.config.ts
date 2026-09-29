@@ -5,7 +5,7 @@ import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
-import { registerLicense } from '@primeui/license-manager';
+import { registerPrimeUiLicense } from './core/theme/register-primeui-license';
 import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -19,10 +19,7 @@ import { IndomitoPreset } from './core/theme/indomito.preset';
 
 registerLocaleData(localeEsCl);
 
-registerLicense({
-  primeui:
-    'eyJpZCI6IjdlNGMyMjVmLTM1ZjYtNGM3ZC05OWU4LTJhMDM4NmFhNTQ2NyIsInByb2R1Y3QiOiJwcmltZXVpIiwidGllciI6ImNvbW11bml0eSIsInR5cGUiOiJkZXYiLCJpYXQiOjE3OTAxNzMwNzksImV4cCI6MTgyMTcwOTA3OX0.VxWUpNiI0EGA62W5969K6U96DaMMPQM5_W1ndAPcMPL5jNWwxLaJopWdd6BofVAk9gmTxu6T-ffnkqu-TuJlDg',
-});
+registerPrimeUiLicense();
 
 export const appConfig: ApplicationConfig = {
   providers: [
