@@ -7,6 +7,13 @@ import { KhipuDev } from '../services/khipu-dev';
 import { ThemeService } from '../../core/theme/theme.service';
 
 describe('KhipuDevPage', () => {
+  const stored = new Map<string, string>();
+  const testStorage = {
+    clear: () => stored.clear(),
+    getItem: (key: string) => stored.get(key) ?? null,
+    removeItem: (key: string) => stored.delete(key),
+    setItem: (key: string, value: string) => stored.set(key, value),
+  };
   const api = {
     configuration: vi.fn(),
     create: vi.fn(),
@@ -14,6 +21,7 @@ describe('KhipuDevPage', () => {
     verify: vi.fn(),
   };
   beforeEach(() => {
+    vi.stubGlobal('localStorage', testStorage);
     localStorage.removeItem('indomito-khipu-dev-attempt');
     vi.resetAllMocks();
     api.configuration.mockReturnValue(

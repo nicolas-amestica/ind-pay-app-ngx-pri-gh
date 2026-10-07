@@ -42,6 +42,7 @@
           <th>Período</th>
           <th>Pasajeros</th>
           <th>Estado</th>
+          <th>Documento firmado</th>
           <th>Actualización</th>
           <th aria-label="Acciones"></th></tr
       ></ng-template>
@@ -59,6 +60,19 @@
               >{{ statusLabel(contract.status) }}</span
             >
           </td>
+          <td>
+            @if (contract.status === 'APPROVED') {
+              <span
+                class="rounded-full px-3 py-1 text-xs font-semibold"
+                [class.bg-amber-100]="contract.signatureStatus !== 'SIGNED_UPLOADED'"
+                [class.text-amber-900]="contract.signatureStatus !== 'SIGNED_UPLOADED'"
+                [class.bg-emerald-100]="contract.signatureStatus === 'SIGNED_UPLOADED'"
+                [class.text-emerald-900]="contract.signatureStatus === 'SIGNED_UPLOADED'"
+              >{{ signatureLabel(contract.signatureStatus || 'PENDING_SIGNED_UPLOAD') }}</span>
+            } @else {
+              <span class="text-sm text-muted">No aplica</span>
+            }
+          </td>
           <td>{{ contract.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td class="flex items-center justify-end gap-3">
             @if (contract.status === 'APPROVED') {
@@ -66,6 +80,7 @@
                 <span class="pi pi-file-pdf" aria-hidden="true"></span>
                 Ver PDF
               </button>
+              <a pButton size="small" severity="secondary" text [routerLink]="['/contratos', contract.id, 'anexos']">Anexos</a>
             }
             <a
               [routerLink]="['/contratos', contract.id, 'editar']"
@@ -77,7 +92,7 @@
       >
       <ng-template #emptymessage
         ><tr>
-          <td colspan="8" class="py-12 text-center text-sm text-muted">
+          <td colspan="9" class="py-12 text-center text-sm text-muted">
             No hay registros de contratos en el año seleccionado.
           </td>
         </tr></ng-template

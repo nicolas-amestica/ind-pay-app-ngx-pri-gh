@@ -125,7 +125,7 @@ export class ContractTemplateService {
       sheet.getCell(row, 6).dataValidation = {
         type: 'list',
         allowBlank: true,
-        formulae: ['"Femenino,Masculino,Otro,Prefiere no indicar"'],
+        formulae: ['"Femenino,Masculino"'],
         showErrorMessage: true,
         errorStyle: 'stop',
         errorTitle: 'Sexo inválido',

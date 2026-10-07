@@ -1,0 +1,111 @@
+<p-panel header="Comprobantes de pago">
+  <div class="flex flex-col gap-4" [attr.aria-busy]="view().busy">
+    <p class="text-sm text-muted">
+      Documentos de pagos recibidos. No son boletas ni facturas del SII.
+    </p>
+    <button pButton type="button" (click)="load()" [disabled]="view().busy">
+      Consultar comprobantes
+    </button>
+    @if (view().error) {
+      <p-message severity="warn">{{ view().error }}</p-message>
+    }
+    @if (view().loaded && !view().items.length) {
+      <p>No hay comprobantes registrados.</p>
+    }
+    @for (receipt of view().items; track receipt.id) {
+      <article class="flex flex-col gap-2 border-t border-line pt-3">
+        <p class="font-semibold">
+          {{ receipt.amount | currency: 'CLP' : 'symbol-narrow' : '1.0-0' }} ·
+          {{ receipt.effectiveDate | date: 'dd/MM/yyyy' : 'UTC' }}
+        </p>
+        <p class="break-all text-sm text-muted">{{ receipt.id }}</p>
+        @if (receipt.review) {
+          <p class="text-sm">
+            Recibido para revisión; este comprobante no acredita una cuota saldada.
+          </p>
+        }
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          (click)="download(receipt.id)"
+          [disabled]="view().busy"
+        >
+          Preparar descarga PDF
+        </button>
+      </article>
+      @if (!tripId()) {
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        outlined
+        (click)="selectResend(receipt.id)"
+        [disabled]="delivery().busy || !!delivery().request"
+      >
+        Reenviar este comprobante
+      </button>
+      }
+    }
+    @if (delivery().receiptId) {
+      <form
+        [formGroup]="emailForm()"
+        (ngSubmit)="resend()"
+        class="flex min-w-0 flex-col gap-3 border-t border-line pt-4"
+        [attr.aria-busy]="delivery().busy"
+      >
+        <p class="break-all text-sm">Reenviar comprobante {{ delivery().receiptId }}</p>
+        <label [for]="'receipt-email-' + delivery().receiptId"
+          >Correo destinatario (obligatorio)</label
+        >
+        <input
+          pInputText
+          type="email"
+          [id]="'receipt-email-' + delivery().receiptId"
+          formControlName="email"
+          maxlength="254"
+          autocomplete="email"
+          [attr.aria-invalid]="
+            emailForm().controls.email.touched && emailForm().controls.email.invalid
+          "
+          [attr.aria-describedby]="'receipt-email-help-' + delivery().receiptId"
+        />
+        <p [id]="'receipt-email-help-' + delivery().receiptId" class="text-sm text-muted">
+          {{
+            emailForm().controls.email.touched && emailForm().controls.email.invalid
+              ? 'Ingresa un correo válido.'
+              : 'Se enviará una copia del mismo PDF; no se realizará otro cobro.'
+          }}
+        </p>
+        @if (delivery().error) {
+          <p-message severity="warn">{{ delivery().error }}</p-message>
+        }
+        @if (delivery().queued) {
+          <p-message severity="info"
+            >Solicitud registrada. El correo se enviará cuando el servicio procese la
+            entrega.</p-message
+          >
+        }
+        <button pButton type="submit" [disabled]="delivery().busy || delivery().queued">
+          {{ delivery().request ? 'Reintentar mismo reenvío' : 'Solicitar reenvío' }}
+        </button>
+      </form>
+    }
+    @if (view().url) {
+      <a
+        pButton
+        [href]="view().url"
+        target="_blank"
+        rel="noopener noreferrer"
+        referrerpolicy="no-referrer"
+        >Descargar PDF (enlace temporal)</a
+      >
+    }
+    @if (view().cursor) {
+      <button pButton type="button" (click)="load(true)" [disabled]="view().busy">
+        Ver más comprobantes
+      </button>
+    }
+  </div>
+</p-panel>

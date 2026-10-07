@@ -142,6 +142,11 @@ function normalizeDocumentId(value: string): string {
  * Valida un RUT chileno normalizado: entre 7 y 8 dígitos de cuerpo más el dígito
  * verificador de módulo 11, que puede ser un dígito o la letra `K`.
  */
+/** Valida exclusivamente RUT, sin los formatos alternativos permitidos en la nómina. */
+export function isValidChileanRut(value: string): boolean {
+  return isValidRut(normalizeDocumentId(value));
+}
+
 function isValidRut(normalized: string): boolean {
   if (normalized.length < RUT_MIN_LENGTH || normalized.length > RUT_MAX_LENGTH) return false;
 

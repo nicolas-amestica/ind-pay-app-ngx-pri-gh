@@ -6,10 +6,12 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
-import { ReactiveFormsModule, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AuthService } from '../../../../core/auth/auth.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { distinctUntilChanged, finalize, forkJoin, merge, skip, type Observable } from 'rxjs';
+import { distinctUntilChanged, finalize, forkJoin, from, merge, skip, switchMap, throwError, type Observable } from 'rxjs';
 import { ButtonDirective } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
 import { FileUpload } from 'primeng/fileupload';
@@ -17,6 +19,8 @@ import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { Table } from 'primeng/table';
+import { Checkbox } from 'primeng/checkbox';
+import { Textarea } from 'primeng/textarea';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { ContractExcelImporter } from '../../importers/contract-excel.importer';
 import type { Favorite, FavoriteSummary } from '../../../programs/interfaces/favorite.interface';
@@ -27,10 +31,13 @@ import {
 import { FavoritesService } from '../../../programs/services/favorites.service';
 import { calculateContractPayments } from '../../fn/calculate-contract-payments';
 import { birthDateValidator, rutValidator } from '../../fn/contract-validators';
+import { optionalTravelRangeValidator } from '../../validators/optional-travel-range.validator';
+import { installmentStartValidator } from '../../validators/installment-start.validator';
+import { installmentMonthNumber } from '../../fn/installment-calendar';
 import { getInvalidContractFields } from '../../fn/get-invalid-contract-fields';
 import { reconcileFormArray } from '../../fn/reconcile-form-array';
 import { RequiredFieldMessageDirective } from '../../directives/required-field-message.directive';
-import { CONTRACT_MONTHS, CONTRACT_SEX_OPTIONS } from '../../constants/contract-options';
+import { CONTRACT_SEX_OPTIONS } from '../../constants/contract-options';
 import type {
   Contract,
   ContractContent,
@@ -38,29 +45,38 @@ import type {
   ContractPDFAccess,
   ContractProgramReference,
   ContractStatus,
+  ContractSignatureStatus,
+  ContractSignedDocument,
 } from '../../interfaces/contract.interface';
 import { ContractsService } from '../../services/contracts.service';
 import { ContractTemplateService } from '../../services/contract-template.service';
 import { DocumentPreviewService } from '../../../../shared/documents/services/document-preview.service';
 import { APP_MESSAGES } from '../../../../shared/constants/app-messages';
+import { sha256File } from '../../fn/sha256-file';
 
 @Component({
   selector: 'app-contract-form-page',
   imports: [
+    RouterLink,
+    DatePipe,
     ButtonDirective,
+    Checkbox,
     DatePicker,
     FileUpload,
     InputNumber,
     InputText,
+    FormsModule,
     ReactiveFormsModule,
     RequiredFieldMessageDirective,
     Select,
     Table,
+    Textarea,
   ],
   templateUrl: './contract-form.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContractFormPage {
+  protected readonly auth = inject(AuthService);
   private readonly requiredMessages = viewChildren(RequiredFieldMessageDirective);
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ContractsService);
@@ -77,11 +93,19 @@ export class ContractFormPage {
   protected readonly version = signal(0);
   protected readonly status = signal<ContractStatus>('DRAFT');
   protected readonly locked = signal(false);
+  protected readonly signatureStatus = signal<ContractSignatureStatus>('NOT_REQUIRED');
+  protected readonly signedDocument = signal<ContractSignedDocument | null>(null);
+  protected readonly signedDocuments = signal<ContractSignedDocument[]>([]);
+  protected readonly signedDocumentsNextCursor = signal('');
+  protected readonly confirmsAllSignatures = signal(false);
+  protected readonly replacementReason = signal('');
+  protected readonly signedUploadBusy = signal(false);
   protected readonly programs = signal<FavoriteSummary[]>([]);
   protected readonly programsLoading = signal(false);
   protected readonly configuration = signal<ContractFormConfiguration | null>(null);
-  protected readonly months = CONTRACT_MONTHS;
   protected readonly sexOptions = CONTRACT_SEX_OPTIONS;
+  protected readonly minInstallmentStartDate = new Date(2000, 0, 1);
+  protected readonly maxInstallmentStartDate = new Date(2200, 11, 31);
   protected readonly maxBirthDate = new Date();
   protected readonly defaultBirthDate = (() => {
     const d = new Date();
@@ -115,7 +139,7 @@ export class ContractFormPage {
       city: ['', Validators.required],
       contractDate: [null as Date | null, Validators.required],
       destination: ['', Validators.required],
-      travelRange: this.fb.control<Date[] | null>(null, Validators.required),
+      travelRange: this.fb.control<Date[] | null>(null, optionalTravelRangeValidator),
       days: [0, [Validators.required, Validators.min(1)]],
       nights: [0, [Validators.required, Validators.min(0)]],
       departurePoint: ['', Validators.required],
@@ -135,19 +159,26 @@ export class ContractFormPage {
       maxExchangeRate: [0, [Validators.required, Validators.min(1)]],
       discountPercentage: [0, [Validators.min(0), Validators.max(100)]],
       bankAccountId: ['', Validators.required],
-      installments: this.fb.group({
-        quantity: [0, [Validators.required, Validators.min(1)]],
-        groupInstallmentValue: [{ value: 0, disabled: true }, Validators.required],
-        individualInstallmentValue: [{ value: 0, disabled: true }, Validators.required],
-        startMonth: ['', Validators.required],
-      }),
+      installments: this.fb.group(
+        {
+          quantity: [0, [Validators.required, Validators.min(1)]],
+          groupInstallmentValue: [{ value: 0, disabled: true }, Validators.required],
+          individualInstallmentValue: [{ value: 0, disabled: true }, Validators.required],
+          installmentStartDate: this.fb.control<Date | null>(null, Validators.required),
+          startMonth: [''],
+          startYear: this.fb.control<number | null>(null),
+          startDay: this.fb.control<number | null>(null),
+        },
+        { validators: installmentStartValidator },
+      ),
       conditions: this.fb.group({
+        refundPolicyVersion: [2],
         depositPercentageWithFlight: [65, Validators.required],
         depositPercentageWithoutFlight: [20, Validators.required],
-        specialProgramDeposit: [100000, Validators.required],
+        specialProgramDeposit: [3000000, Validators.required],
         daysBeforeFlightBalance: [30, Validators.required],
         daysBeforeTerrestrialBalance: [10, Validators.required],
-        cancellationPenaltyPercentage: [25, Validators.required],
+        cancellationPenaltyPercentage: [0],
         cancellationNoticeDays: [35, Validators.required],
         complaintDeadlineDays: [30, Validators.required],
       }),
@@ -162,9 +193,12 @@ export class ContractFormPage {
     passengers: this.fb.array([this.passengerGroup()]),
   });
 
+  protected readonly historicalRefundPolicy = signal(false);
+
   constructor() {
     this.setupPaymentCalculation();
     this.setupDependentFields();
+    this.setupInstallmentStartDate();
     const id = this.route.snapshot.paramMap.get('id');
     this.loadInitialData(id !== null);
     if (id) this.load(id);
@@ -395,6 +429,103 @@ export class ContractFormPage {
     )[this.status()];
   }
 
+  protected uploadSignedDocument(file: File | undefined, uploader: FileUpload): void {
+    const contractId = this.contractId();
+    if (!contractId || !file || this.signedUploadBusy()) return;
+    if (!file.name.toLowerCase().endsWith('.pdf') || file.size < 5 || file.size > 25 * 1024 * 1024) {
+      this.notifications.error('Selecciona un PDF válido de hasta 25 MiB.');
+      uploader.clear();
+      return;
+    }
+    if (!this.confirmsAllSignatures()) {
+      this.notifications.warn('Confirma que el documento corresponde al contrato y contiene todas las firmas.');
+      uploader.clear();
+      return;
+    }
+    if (this.signedDocument() && !this.replacementReason().trim()) {
+      this.notifications.warn('Indica el motivo por el que reemplazas la copia firmada vigente.');
+      uploader.clear();
+      return;
+    }
+    const clientRequestId = crypto.randomUUID();
+    this.signedUploadBusy.set(true);
+    from(sha256File(file))
+      .pipe(
+        switchMap((sha256) =>
+          this.api.prepareSignedDocument(contractId, {
+            clientRequestId,
+            size: file.size,
+            sha256,
+            currentDocumentId: this.signedDocument()?.id ?? '',
+            replacementReason: this.replacementReason().trim(),
+            confirmsAllSignatures: true,
+          }),
+        ),
+        switchMap((preparation) =>
+          preparation.status === 'COMPLETED'
+            ? this.api.get(contractId)
+            : preparation.uploadUrl
+              ? this.api
+                  .uploadSignedDocument(preparation.uploadUrl, file)
+                  .pipe(switchMap(() => this.api.finalizeSignedDocument(contractId, clientRequestId)), switchMap(() => this.api.get(contractId)))
+              : throwError(() => new Error('La API no entregó una URL de carga.')),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.signedUploadBusy.set(false);
+          uploader.clear();
+        }),
+      )
+      .subscribe({
+        next: (contract) => {
+          this.applyContract(contract);
+          this.confirmsAllSignatures.set(false);
+          this.replacementReason.set('');
+          this.notifications.success('La copia firmada quedó publicada y vinculada al contrato aprobado.');
+        },
+        error: () => this.notifications.error('No se pudo publicar la copia firmada. Revisa el archivo y vuelve a intentarlo.'),
+      });
+  }
+
+  protected viewSignedDocument(document?: ContractSignedDocument): void {
+    const contractId = this.contractId();
+    if (!contractId || this.signedUploadBusy()) return;
+    this.signedUploadBusy.set(true);
+    this.api
+      .getSignedDocumentPdf(contractId, document?.id)
+      .pipe(takeUntilDestroyed(this.destroyRef), finalize(() => this.signedUploadBusy.set(false)))
+      .subscribe(({ url }) =>
+        this.documentPreview.open({
+          title: 'Contrato firmado',
+          description: document?.replacementReason || 'Copia firmada presencialmente por las partes.',
+          documents: [{ name: 'contrato-firmado.pdf', mimeType: 'application/pdf', source: url }],
+        }),
+      );
+  }
+
+  protected loadMoreSignedDocuments(): void {
+    const contractId = this.contractId();
+    const cursor = this.signedDocumentsNextCursor();
+    if (contractId && cursor) this.loadSignedDocuments(contractId, cursor, true);
+  }
+
+  private loadSignedDocuments(contractId: string, cursor = '', append = false): void {
+    this.api
+      .listSignedDocuments(contractId, cursor)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ items, nextCursor }) => {
+          const documents = append ? [...this.signedDocuments(), ...items] : items;
+          this.signedDocuments.set(documents.sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt)));
+          this.signedDocumentsNextCursor.set(nextCursor ?? '');
+        },
+        error: () => {
+          if (!append) this.signedDocuments.set([]);
+          this.signedDocumentsNextCursor.set('');
+        },
+      });
+  }
+
   protected preview(): void {
     if (this.form.invalid || this.busy()) {
       this.form.markAllAsTouched();
@@ -498,6 +629,18 @@ export class ContractFormPage {
     this.version.set(contract.version);
     this.status.set(contract.status);
     this.locked.set(contract.status === 'APPROVED' || contract.status === 'CANCELLED');
+    this.signatureStatus.set(
+      contract.signatureStatus ?? (contract.status === 'APPROVED' ? 'PENDING_SIGNED_UPLOAD' : 'NOT_REQUIRED'),
+    );
+    this.signedDocument.set(contract.signedDocument ?? null);
+    if (contract.status === 'APPROVED') this.loadSignedDocuments(contract.id);
+    else {
+      this.signedDocuments.set([]);
+      this.signedDocumentsNextCursor.set('');
+    }
+    this.historicalRefundPolicy.set(
+      this.locked() && (contract.content.payments.conditions.refundPolicyVersion ?? 0) < 2,
+    );
     this.programReference.set(contract.programReference ?? null);
     this.form.patchValue({
       programId: contract.programId ?? '',
@@ -508,16 +651,43 @@ export class ContractFormPage {
         city: contract.content.trip.city,
         contractDate: this.dateObject(contract.content.trip.contractDate),
         destination: contract.content.trip.destination,
-        travelRange: [
-          this.dateObject(contract.content.trip.departureDate)!,
-          this.dateObject(contract.content.trip.returnDate)!,
-        ],
         days: contract.content.trip.days,
+        travelRange:
+          contract.content.trip.departureDate && contract.content.trip.returnDate
+            ? [
+                this.dateObject(contract.content.trip.departureDate)!,
+                this.dateObject(contract.content.trip.returnDate)!,
+              ]
+            : null,
         nights: contract.content.trip.nights,
         departurePoint: contract.content.trip.departurePoint,
       },
       plan: { name: contract.content.plan.name },
-      payments: contract.content.payments,
+      payments: {
+        ...contract.content.payments,
+        installments: {
+          ...contract.content.payments.installments,
+          startMonth: String(
+            installmentMonthNumber(contract.content.payments.installments.startMonth),
+          ).padStart(2, '0'),
+          startYear: contract.content.payments.installments.startYear ?? null,
+          startDay: contract.content.payments.installments.startDay ?? null,
+        },
+      },
+    });
+    this.form.controls.payments.controls.installments.controls.installmentStartDate.setValue(
+      this.installmentDate(
+        contract.content.payments.installments.startYear,
+        contract.content.payments.installments.startMonth,
+        contract.content.payments.installments.startDay,
+      ),
+      { emitEvent: false },
+    );
+    this.form.controls.payments.controls.conditions.patchValue({
+      refundPolicyVersion: this.historicalRefundPolicy() ? 0 : 2,
+      cancellationPenaltyPercentage: this.historicalRefundPolicy()
+        ? contract.content.payments.conditions.cancellationPenaltyPercentage
+        : 0,
     });
     this.replaceArray(this.representatives, contract.content.representatives, (value) =>
       this.personGroup(value),
@@ -539,7 +709,9 @@ export class ContractFormPage {
     const raw = this.form.getRawValue();
     const [departureDate, returnDate] = raw.trip.travelRange ?? [];
     const { travelRange: _, ...trip } = raw.trip;
-    const { bankAccountId: __, ...payments } = raw.payments;
+    const { bankAccountId: __, ...paymentsWithInternalDate } = raw.payments;
+    const { installmentStartDate: ___, ...installments } = paymentsWithInternalDate.installments;
+    const payments = { ...paymentsWithInternalDate, installments };
     return {
       representatives: raw.representatives,
       institution: raw.institution,
@@ -602,6 +774,21 @@ export class ContractFormPage {
     return `${year}-${month}-${day}`;
   }
 
+  private installmentDate(
+    year: number | undefined,
+    month: string,
+    day: number | undefined,
+  ): Date | null {
+    if (!year || !day) return null;
+    const monthIndex = installmentMonthNumber(month) - 1;
+    const value = new Date(year, monthIndex, day);
+    return value.getFullYear() === year &&
+      value.getMonth() === monthIndex &&
+      value.getDate() === day
+      ? value
+      : null;
+  }
+
   private periodObject(value: string): Date {
     const match = /^(\d{4})-(\d{2})/.exec(value);
     return match
@@ -658,6 +845,23 @@ export class ContractFormPage {
     this.form.controls.trip.controls.days.valueChanges
       .pipe(skip(1), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.form.controls.trip.controls.travelRange.reset());
+  }
+
+  private setupInstallmentStartDate(): void {
+    this.form.controls.payments.controls.installments.controls.installmentStartDate.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        const installments = this.form.controls.payments.controls.installments;
+        installments.patchValue(
+          value instanceof Date && !Number.isNaN(value.getTime())
+            ? {
+                startMonth: String(value.getMonth() + 1).padStart(2, '0'),
+                startYear: value.getFullYear(),
+                startDay: value.getDate(),
+              }
+            : { startMonth: '', startYear: null, startDay: null },
+        );
+      });
   }
 
   private syncClientCourse(): void {

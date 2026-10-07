@@ -31,6 +31,9 @@ describe('ContractTemplateService', () => {
       "'_listas'!$A$2:$A$3",
     ]);
     expect(sheet?.getCell(firstPassengerRow, 6).dataValidation.type).toBe('list');
+    expect(sheet?.getCell(firstPassengerRow, 6).dataValidation.formulae).toEqual([
+      '"Femenino,Masculino"',
+    ]);
     expect(sheet?.getCell(firstPassengerRow, 1).protection.locked).toBe(false);
     const visibleText: string[] = [];
     sheet?.eachRow((row) => row.eachCell((cell) => visibleText.push(String(cell.value ?? ''))));

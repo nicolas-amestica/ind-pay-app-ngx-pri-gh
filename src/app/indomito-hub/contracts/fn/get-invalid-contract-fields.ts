@@ -3,6 +3,7 @@ import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 const FIELD_LABELS: Record<string, string> = {
   programId: 'Cotización guardada',
   period: 'Período',
+  'payments.installments.installmentStartDate': 'Inicio y vencimiento mensual de cuotas',
   'representatives[].name': 'Nombre del representante de Giras Indómito',
   'representatives[].dni': 'RUT del representante de Giras Indómito',
   'institution.name': 'Establecimiento',
@@ -26,7 +27,6 @@ const FIELD_LABELS: Record<string, string> = {
   'payments.daysBeforePayment': 'Días límite de pago',
   'payments.maxExchangeRate': 'Tipo de cambio máximo',
   'payments.installments.quantity': 'Cantidad de cuotas',
-  'payments.installments.startMonth': 'Mes de inicio de cuotas',
   'payments.bankAccount.accountNumber': 'Número de cuenta bancaria',
   'payments.bankAccount.accountHolder': 'Titular de la cuenta bancaria',
   'payments.bankAccount.holderDNI': 'RUT del titular de la cuenta bancaria',
@@ -50,6 +50,7 @@ export function getInvalidContractFields(control: AbstractControl): string[] {
 function visit(control: AbstractControl, path: string[], invalid: Set<string>): void {
   if (control.disabled) return;
   if (control instanceof FormGroup) {
+    if (control.hasError('installmentStart')) invalid.add('Fecha de inicio de cuotas válida');
     for (const [key, child] of Object.entries(control.controls))
       visit(child, [...path, key], invalid);
     return;

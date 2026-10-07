@@ -9,6 +9,50 @@
       </p>
     </div>
     <div class="flex flex-wrap gap-3">
+      @if (status() === 'APPROVED' && auth.canAccess('PAYMENT_SETUP')) {
+        <a
+          pButton
+          severity="secondary"
+          outlined
+          [routerLink]="['/contratos', contractId(), 'puesta-en-marcha']"
+          >Puesta en marcha de cobranza</a
+        >
+        <a
+          pButton
+          severity="secondary"
+          outlined
+          [routerLink]="['/cobranza/giras', contractId(), 'abono-grupal']"
+          >Registrar abono grupal</a
+        >
+        <a
+          pButton
+          severity="secondary"
+          outlined
+          [routerLink]="['/cobranza/giras', contractId(), 'descuento-grupal']"
+          >Descuento grupal</a
+        >
+        <a
+          pButton
+          severity="secondary"
+          outlined
+          [routerLink]="['/cobranza/giras', contractId(), 'tesoreria']"
+          >Tesorería</a
+        >
+        <a
+          pButton
+          severity="secondary"
+          outlined
+          [routerLink]="['/cobranza/giras', contractId(), 'alertas']"
+          >Alertas de cobranza</a
+        >
+        <a
+          pButton
+          severity="secondary"
+          outlined
+          [routerLink]="['/cobranza/giras', contractId(), 'acceso']"
+          >Acceso portal</a
+        >
+      }
       <button
         pButton
         type="button"
@@ -39,7 +83,7 @@
         [disabled]="busy()"
         (click)="preview()"
       >
-        {{ status() === 'PENDING_APPROVAL' ? 'Revisar y aprobar PDF' : 'Previsualizar' }}
+        {{ status() === 'PENDING_APPROVAL' ? 'Revisar y aprobar PDF' : status() === 'APPROVED' ? 'Ver contrato generado' : 'Previsualizar' }}
       </button>
       <button pButton type="button" [disabled]="locked() || busy()" (click)="save()">
         {{ busy() ? 'Guardando…' : 'Guardar contrato' }}
@@ -59,6 +103,102 @@
         Este contrato fue cancelado y ya no admite modificaciones.
       }
     </div>
+  }
+
+  @if (status() === 'APPROVED') {
+    <section class="app-panel mb-6 p-6" aria-labelledby="signed-contract-title">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="max-w-3xl">
+          <p class="text-xs font-bold uppercase tracking-[.16em] text-brand-active">Documentación obligatoria</p>
+          <h2 id="signed-contract-title" class="mt-2 text-xl font-semibold text-ink">Contrato firmado presencialmente</h2>
+          <p class="mt-2 text-sm text-muted">
+            El contrato generado permanece protegido. Después de firmarlo ante notaría, carga aquí la copia PDF firmada por todas las partes. No existe una fecha máxima, pero el expediente seguirá pendiente hasta publicarla.
+          </p>
+        </div>
+        <span
+          class="rounded-full px-3 py-1 text-sm font-semibold"
+          [class.bg-amber-100]="signatureStatus() === 'PENDING_SIGNED_UPLOAD'"
+          [class.text-amber-900]="signatureStatus() === 'PENDING_SIGNED_UPLOAD'"
+          [class.bg-emerald-100]="signatureStatus() === 'SIGNED_UPLOADED'"
+          [class.text-emerald-900]="signatureStatus() === 'SIGNED_UPLOADED'"
+        >{{ signatureStatus() === 'SIGNED_UPLOADED' ? 'Copia firmada publicada' : 'Carga firmada pendiente' }}</span>
+      </div>
+
+      <div class="mt-6 grid gap-5 lg:grid-cols-2">
+        <div class="space-y-4">
+          @if (signedDocument()) {
+            <button pButton type="button" severity="secondary" outlined [disabled]="signedUploadBusy()" (click)="viewSignedDocument()">
+              <span class="pi pi-file-pdf" aria-hidden="true"></span>
+              Ver copia firmada vigente
+            </button>
+            <label class="flex flex-col gap-2" for="signed-replacement-reason">
+              <span>Motivo del reemplazo <span class="text-red-600" aria-hidden="true">*</span></span>
+              <textarea
+                pTextarea
+                id="signed-replacement-reason"
+                rows="3"
+                maxlength="500"
+                [ngModel]="replacementReason()"
+                (ngModelChange)="replacementReason.set($event)"
+                placeholder="Ej.: se reemplaza porque el escaneo anterior estaba incompleto"
+              ></textarea>
+            </label>
+          }
+          <div class="flex items-start gap-3">
+            <p-checkbox
+              inputId="confirm-signed-contract"
+              binary
+              [ngModel]="confirmsAllSignatures()"
+              (ngModelChange)="confirmsAllSignatures.set($event)"
+            />
+            <label for="confirm-signed-contract" class="text-sm text-ink">
+              Confirmo que el archivo corresponde a este contrato y que contiene las firmas de todas las partes. Esta confirmación no certifica criptográficamente las firmas manuscritas.
+            </label>
+          </div>
+          <p-fileupload
+            #signedUpload
+            mode="basic"
+            name="signedContract"
+            accept="application/pdf,.pdf"
+            chooseIcon="pi pi-upload"
+            [chooseLabel]="signedUploadBusy() ? 'Publicando…' : signedDocument() ? 'Cargar nueva versión' : 'Cargar contrato firmado'"
+            [auto]="true"
+            [customUpload]="true"
+            [maxFileSize]="26214400"
+            [disabled]="signedUploadBusy()"
+            (uploadHandler)="uploadSignedDocument($event.files[0], signedUpload)"
+          />
+          <p class="text-xs text-muted">Solo PDF, máximo 25 MiB. Las versiones anteriores permanecen auditables.</p>
+        </div>
+
+        <div>
+          <h3 class="text-base font-semibold text-ink">Historial de versiones firmadas</h3>
+          <div class="mt-3 overflow-x-auto">
+            <p-table [value]="signedDocuments()" [tableStyle]="{ 'min-width': '34rem' }">
+              <ng-template #header>
+                <tr><th>Fecha</th><th>Responsable</th><th>Motivo</th><th aria-label="Acciones"></th></tr>
+              </ng-template>
+              <ng-template #body let-document>
+                <tr>
+                  <td>{{ document.uploadedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ document.uploadedBy }}</td>
+                  <td>{{ document.replacementReason || 'Primera carga' }}</td>
+                  <td class="text-right">
+                    <button pButton type="button" size="small" text [disabled]="signedUploadBusy()" (click)="viewSignedDocument(document)">Ver PDF</button>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template #emptymessage>
+                <tr><td colspan="4" class="py-8 text-center text-sm text-muted">Todavía no se ha publicado una copia firmada.</td></tr>
+              </ng-template>
+            </p-table>
+          </div>
+          @if (signedDocumentsNextCursor()) {
+            <button class="mt-3" pButton type="button" severity="secondary" text (click)="loadMoreSignedDocuments()">Cargar versiones anteriores</button>
+          }
+        </div>
+      </div>
+    </section>
   }
 
   <form [formGroup]="form" class="space-y-6">
@@ -199,7 +339,7 @@
             placeholder="Lugar de encuentro y salida"
         /></label>
         <label class="flex flex-col gap-2 lg:col-span-2"
-          ><span>Fecha salida y retorno <span class="text-red-600" aria-hidden="true">*</span></span
+          ><span>Fecha salida y retorno (opcional)</span
           ><p-datepicker
             fluid
             [pt]="datePickerPt"
@@ -208,10 +348,23 @@
             dateFormat="dd/mm/yy"
             [readonlyInput]="true"
             [showIcon]="true"
+            [showClear]="true"
             [appendTo]="'body'"
-            placeholder="Seleccionar rango de fechas"
+            placeholder="Fecha por definir"
+            aria-describedby="travel-dates-help"
             (onSelect)="selectTravelStart()"
           />
+          <small id="travel-dates-help"
+            >Si aún no se acuerda, el contrato indicará «fecha por definir».</small
+          >
+          @if (
+            form.controls.trip.controls.travelRange.touched &&
+            form.controls.trip.controls.travelRange.invalid
+          ) {
+            <small role="alert" class="text-red-600 dark:text-red-400"
+              >Complete el rango de fechas o déjelo vacío.</small
+            >
+          }
         </label>
         <label class="flex flex-col gap-2"
           ><span>Días <span class="text-red-600" aria-hidden="true">*</span></span
@@ -494,7 +647,7 @@
         </label>
       </div>
       <h3 class="mb-4 mt-7 font-semibold">Cuotas</h3>
-      <div formGroupName="installments" class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div formGroupName="installments" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <label class="flex flex-col gap-2"
           ><span>Cantidad <span class="text-red-600" aria-hidden="true">*</span></span
           ><p-inputnumber
@@ -530,18 +683,39 @@
             fluid
           />
         </label>
-        <label class="flex flex-col gap-2"
-          ><span>Inicio pago cuotas <span class="text-red-600" aria-hidden="true">*</span></span
-          ><p-select
-            [pt]="selectPt"
+        <label class="flex flex-col gap-2 md:col-span-2 lg:col-span-1">
+          <span
+            >Inicio y vencimiento mensual de cuotas
+            <span class="text-red-600" aria-hidden="true">*</span></span
+          >
+          <p-datepicker
+            formControlName="installmentStartDate"
+            [pt]="datePickerPt"
+            dateFormat="dd/mm/yy"
+            placeholder="DD/MM/AAAA"
+            [showIcon]="true"
+            [minDate]="minInstallmentStartDate"
+            [maxDate]="maxInstallmentStartDate"
+            [appendTo]="'body'"
+            aria-describedby="installment-start-help"
             fluid
-            formControlName="startMonth"
-            [options]="months"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Seleccionar mes"
           />
         </label>
+        <div class="md:col-span-2 lg:col-span-3">
+          <small id="installment-start-help"
+            >Esta es la fecha de la primera cuota. Las siguientes vencen el mismo día de cada mes.
+            Si un mes no tiene ese día, vence el último día del mes; después se mantiene el día
+            pactado.</small
+          >
+          @if (
+            form.controls.payments.controls.installments.touched &&
+            form.controls.payments.controls.installments.hasError('installmentStart')
+          ) {
+            <p role="alert" class="text-red-600 dark:text-red-400">
+              El día seleccionado no existe en ese mes y año. Seleccione un día válido.
+            </p>
+          }
+        </div>
       </div>
       <h3 class="mb-4 mt-7 font-semibold">Condiciones contractuales</h3>
       <div formGroupName="conditions" class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -602,19 +776,31 @@
             fluid
           />
         </label>
-        <label class="flex flex-col gap-2"
-          ><span
-            >% penalidad cancelación <span class="text-red-600" aria-hidden="true">*</span></span
-          ><p-inputnumber
-            formControlName="cancellationPenaltyPercentage"
-            placeholder="Porcentaje de penalidad"
-            suffix=" %"
-            [min]="0"
-            [max]="100"
-            [useGrouping]="false"
-            fluid
-          />
-        </label>
+        @if (historicalRefundPolicy()) {
+          <label class="flex flex-col gap-2"
+            ><span>Penalidad del contrato histórico (%)</span
+            ><p-inputnumber
+              formControlName="cancellationPenaltyPercentage"
+              placeholder="Porcentaje de penalidad"
+              suffix=" %"
+              [min]="0"
+              [max]="100"
+              [useGrouping]="false"
+              fluid
+            />
+          </label>
+        } @else {
+          <div class="md:col-span-2 lg:col-span-4">
+            <p class="font-semibold">Desistimiento y devoluciones</p>
+            <p>
+              El abono inicial efectivamente pagado no es reembolsable. Las cuotas posteriores
+              pagadas podrán devolverse según un porcentaje evaluado para cada caso, considerando
+              reservas, costos comprometidos y recuperaciones de proveedores. La base, el
+              porcentaje, el monto y el plazo se informarán por escrito, sin perjuicio de los
+              derechos legales del cliente.
+            </p>
+          </div>
+        }
         <label class="flex flex-col gap-2"
           ><span>Días aviso cancelación <span class="text-red-600" aria-hidden="true">*</span></span
           ><p-inputnumber

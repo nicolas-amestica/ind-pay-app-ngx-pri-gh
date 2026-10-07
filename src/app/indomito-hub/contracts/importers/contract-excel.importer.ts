@@ -146,8 +146,6 @@ export class ContractExcelImporter {
     const normalized = normalize(value);
     if (normalized === 'femenino') return 'FEMALE';
     if (normalized === 'masculino') return 'MALE';
-    if (normalized === 'otro') return 'OTHER';
-    if (normalized === 'prefierenoindicar') return 'NOT_SPECIFIED';
     return '' as ContractPassengerSex;
   }
   private country(value: string): string {

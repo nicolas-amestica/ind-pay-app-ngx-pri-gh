@@ -7,7 +7,7 @@ import { Select } from 'primeng/select';
 import { ButtonDirective } from 'primeng/button';
 import { Table } from 'primeng/table';
 import { finalize } from 'rxjs';
-import type { ContractStatus, ContractSummary } from '../../interfaces/contract.interface';
+import type { ContractSignatureStatus, ContractStatus, ContractSummary } from '../../interfaces/contract.interface';
 import { ContractsService } from '../../services/contracts.service';
 import { DocumentPreviewService } from '../../../../shared/documents/services/document-preview.service';
 
@@ -54,6 +54,13 @@ export class ContractListPage {
       APPROVED: 'bg-emerald-100 text-emerald-800',
       REJECTED: 'bg-red-100 text-red-800',
       CANCELLED: 'bg-zinc-200 text-zinc-700',
+    }[status];
+  }
+  protected signatureLabel(status: ContractSignatureStatus): string {
+    return {
+      NOT_REQUIRED: 'No aplica',
+      PENDING_SIGNED_UPLOAD: 'Firma pendiente',
+      SIGNED_UPLOADED: 'Firmado cargado',
     }[status];
   }
   protected viewPdf(contract: ContractSummary): void {

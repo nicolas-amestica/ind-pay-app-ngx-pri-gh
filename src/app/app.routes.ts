@@ -14,6 +14,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./core/layout/app-shell.component').then((m) => m.AppShellComponent),
     children: [
+      {
+        path: 'cobranza',
+        loadChildren: () =>
+          import('./indomito-hub/collections/collections.routes').then((m) => m.COLLECTIONS_ROUTES),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'cotizaciones' },
       {
         path: 'cotizaciones',
