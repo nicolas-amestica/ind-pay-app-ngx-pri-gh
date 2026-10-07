@@ -1,6 +1,6 @@
 import { registerLicense } from '@primeui/license-manager';
 
-/** Shared development license initialization for both application entry points. */
+/** Inicializa la licencia de desarrollo del portal publico de pagos. */
 export function registerPrimeUiLicense(): void {
   registerLicense({
     primeui:

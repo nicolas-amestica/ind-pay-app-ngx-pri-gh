@@ -1,6 +1,6 @@
 import type { Routes } from '@angular/router';
 
-/** Rutas del artefacto local; no forman parte del despliegue administrativo. */
+/** Rutas del portal publico de pagos. */
 export const PAYMENT_PORTAL_ROUTES: Routes = [
   { path: 'pago-en-proceso', loadComponent: () => import('./pages/payment-transition/payment-transition.page').then((m) => m.PaymentTransitionPage) },
   { path: 'retorno', loadComponent: () => import('./pages/payment-return/payment-return.page').then((m) => m.PaymentReturnPage) },

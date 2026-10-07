@@ -1,12 +1,10 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
-  "cli": {
-    "packageManager": "npm"
-  },
+  "cli": { "packageManager": "npm" },
   "newProjectRoot": "projects",
   "projects": {
-    "ind-hub-app-ngx-pri-gh": {
+    "ind-pay-app-ngx-pri-gh": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -18,118 +16,41 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "allowedCommonJsDependencies": ["exceljs"],
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
-            ],
+            "assets": [{ "glob": "**/*", "input": "public" }],
             "styles": ["src/styles.css"]
           },
           "configurations": {
-            "payments": {
-              "browser": "src/main.payments.ts",
-              "outputPath": "dist/payment-portal-local",
-              "optimization": false,
-              "sourceMap": true
-            },
-            "payments-dev": {
-              "browser": "src/main.payments.ts",
-              "outputPath": "dist/payment-portal-dev",
-              "optimization": true,
-              "sourceMap": false,
-              "outputHashing": "all",
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "2MB",
-                  "maximumError": "3MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
-                }
-              ],
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.dev.ts"
-                }
-              ]
-            },
             "production": {
               "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
-                }
+                { "type": "initial", "maximumWarning": "500kB", "maximumError": "1MB" },
+                { "type": "anyComponentStyle", "maximumWarning": "4kB", "maximumError": "8kB" }
               ],
               "outputHashing": "all",
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.production.ts"
-                }
-              ]
+              "fileReplacements": [{ "replace": "src/environments/environment.ts", "with": "src/environments/environment.production.ts" }]
             },
             "dev": {
               "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
-                }
+                { "type": "initial", "maximumWarning": "500kB", "maximumError": "1MB" },
+                { "type": "anyComponentStyle", "maximumWarning": "4kB", "maximumError": "8kB" }
               ],
               "outputHashing": "all",
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.dev.ts"
-                }
-              ]
+              "fileReplacements": [{ "replace": "src/environments/environment.ts", "with": "src/environments/environment.dev.ts" }]
             },
-            "development": {
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true
-            }
+            "development": { "optimization": false, "extractLicenses": false, "sourceMap": true }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "payments": {
-              "buildTarget": "ind-hub-app-ngx-pri-gh:build:payments"
-            },
-            "production": {
-              "buildTarget": "ind-hub-app-ngx-pri-gh:build:production"
-            },
-            "development": {
-              "buildTarget": "ind-hub-app-ngx-pri-gh:build:development"
-            }
+            "production": { "buildTarget": "ind-pay-app-ngx-pri-gh:build:production" },
+            "development": { "buildTarget": "ind-pay-app-ngx-pri-gh:build:development" }
           },
           "defaultConfiguration": "development"
         },
         "test": {
           "builder": "@angular/build:unit-test",
-          "options": {
-            "runnerConfig": true,
-            "setupFiles": ["src/setup-vitest.ts"]
-          }
+          "options": { "runnerConfig": true, "setupFiles": ["src/setup-vitest.ts"] }
         }
       }
     }

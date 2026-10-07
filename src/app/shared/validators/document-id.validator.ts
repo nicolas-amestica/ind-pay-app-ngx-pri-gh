@@ -30,24 +30,8 @@
  * laxitud de esta implementación. La consecuencia práctica es que solo un RUT de
  * cuerpo de 8 dígitos puede reportarse como inválido por su dígito verificador.
  *
- * ## Fuente de verdad frente a los generadores
- *
- * `indomito-hub/programs/calculation/__arbitraries__/document-id.arbitrary.ts` expone
- * su propio `isValidRut` e `isValidCpf`. **Esa duplicación es deliberada y no se
- * unifica**: un generador que importara el código bajo prueba no podría detectar
- * que ese código está mal, y la Propiedad 18 existe precisamente para contrastar
- * dos implementaciones independientes del mismo estándar público.
- *
- * La división de responsabilidades es entonces:
- *
- * - **Este archivo es la fuente de verdad de la validación de producción.** Es lo
- *   que decide si un control del formulario es válido, y es lo que debe coincidir
- *   con el backend.
- * - Los helpers del generador son herramientas de test. Solo describen el subconjunto
- *   con formato canónico que el generador construye —el `isValidRut` de allá exige
- *   el guion, este no—, así que no sirven para validar la entrada del usuario y
- *   nunca deben importarse desde la aplicación. El directorio `__arbitraries__`
- *   está excluido de `tsconfig.app.json` justamente para que eso sea imposible.
+ * Este archivo es la fuente de verdad de la validación en el portal y debe
+ * mantenerse alineado con el validador del backend.
  */
 
 import type { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';

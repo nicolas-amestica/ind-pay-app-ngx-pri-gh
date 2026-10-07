@@ -2,7 +2,7 @@
 <!-- Managed-By: indomito-context-compiler -->
 <!-- Artifact-Format: 1 -->
 <!-- Engine-Version: 1.0.0 -->
-<!-- Source: ai/source/repo-overrides/ind-hub-app.md -->
+<!-- Source: ai/source/repo-overrides/app-ngx-pay.md -->
 ---
 inclusion: manual
 description: Estandares de dominio y scope del repo
@@ -11,9 +11,9 @@ globs:
   - "src/app/**/*.html"
 ---
 
-# Domain Context — ind-hub-app
+# Domain Context — app-ngx-pay
 
-Contexto de dominio especifico para ind-hub-app-ngx-pri-gh (scope: frontend).
+Contexto de dominio especifico para ind-pay-app-ngx-pri-gh (scope: frontend).
 
 Este archivo se carga automaticamente cuando se editan archivos que coinciden con los globs definidos.
 

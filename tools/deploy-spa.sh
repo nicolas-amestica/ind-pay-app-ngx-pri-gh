@@ -3,14 +3,14 @@ set -euo pipefail
 
 STAGE=${1:-}
 REGION=${2:-us-east-1}
-DIST_PATH=${3:-./dist/payment-portal-dev/browser}
+DIST_PATH=${3:-./dist/ind-pay-app-ngx-pri-gh/browser}
 
 if [[ "$STAGE" != "dev" ]]; then
   echo "Error: el portal de pagos solo puede desplegarse en dev"
   exit 1
 fi
 if [[ ! -f "$DIST_PATH/index.html" ]]; then
-  echo "Error: falta $DIST_PATH/index.html; ejecuta npm run build:payments:dev"
+  echo "Error: falta $DIST_PATH/index.html; ejecuta npm run build:dev"
   exit 1
 fi
 
@@ -19,7 +19,7 @@ EXPECTED_ACCOUNT="382670112717"
 STACK="indomito-hub-infra-payments-cdn-dev"
 ACCOUNT=$(aws sts get-caller-identity --profile "$PROFILE" --query Account --output text)
 if [[ "$ACCOUNT" != "$EXPECTED_ACCOUNT" ]]; then
-  echo "Error: la sesión AWS no corresponde a la cuenta DEV"
+  echo "Error: la sesion AWS no corresponde a la cuenta DEV"
   exit 1
 fi
 
@@ -44,4 +44,4 @@ INVALIDATION=$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUTI
 echo "Portal de pagos DEV desplegado"
 echo "Bucket: $BUCKET"
 echo "CloudFront: $DISTRIBUTION"
-echo "Invalidación: $INVALIDATION"
+echo "Invalidacion: $INVALIDATION"

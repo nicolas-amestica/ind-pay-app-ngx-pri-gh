@@ -1,0 +1,8 @@
+{
+  "/api": {
+    "target": "https://api.dev.girasindomito.cl",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}
