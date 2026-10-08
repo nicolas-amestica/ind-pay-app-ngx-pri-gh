@@ -10,7 +10,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/.claude/rules/global-rules.md",
       "targetPath": ".claude/rules/global-rules.md",
-      "checksum": "sha256:5d413ca7c68756246886838d21f00d0ee8c430c3626f09a6b4740410ad9fbaab"
+      "checksum": "sha256:dd2d62ace6657b7d5c02638d91a4f81d585a89bfc96b76c836f09f4228a3413a"
     },
     {
       "sourcePaths": [
@@ -34,7 +34,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/.kiro/steering/repo-routing.md",
       "targetPath": ".kiro/steering/repo-routing.md",
-      "checksum": "sha256:7a3e515d2384f9b09af48066c69481b1e2e62b1cb8e2bf3674c291781e2cb225"
+      "checksum": "sha256:c3c6b9fb236b875f2912dd08f7b7a472567a150ab5cddf80bfd64fdc52ad3879"
     },
     {
       "sourcePaths": [
@@ -42,7 +42,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/.kiro/steering/spec-lifecycle.md",
       "targetPath": ".kiro/steering/spec-lifecycle.md",
-      "checksum": "sha256:4e7dcd031e79213d33e4f7f62d09e677f303b3b28bd67844b210ccb59a9e2974"
+      "checksum": "sha256:5342ad81f316d6884e6206d6e74a5ec57b9f7e45eca65f829a355f24e482cb0d"
     },
     {
       "sourcePaths": [
@@ -87,7 +87,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/AGENTS.md",
       "targetPath": "AGENTS.md",
-      "checksum": "sha256:0c3803325f0193cc14d555101e083c25d9f3cc3726eefe4b1573e84b100928b0"
+      "checksum": "sha256:1eec20ef07e7ff7d285448e23dc09781ba5aa29cd4542ee71cf750ab9c65d1e6"
     },
     {
       "sourcePaths": [
@@ -99,7 +99,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/CLAUDE.md",
       "targetPath": ".claude/CLAUDE.md",
-      "checksum": "sha256:992209eafd73840a706e4e7207a35e14586dbb04825cebd79c242141b8ac3757"
+      "checksum": "sha256:f3d0d172ede6b4fdeb52a625148ab204bd839b77694e96818f93290ee8b9a324"
     },
     {
       "sourcePaths": [
@@ -111,7 +111,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/GEMINI.md",
       "targetPath": ".gemini/GEMINI.md",
-      "checksum": "sha256:00d6ff2ec0f1ce19a2a7fbab6e2523ca0743d5d14d4b5ab4054076c184d399e2"
+      "checksum": "sha256:85f0173654765049e0c54319978de23cbbf03cbb223dd7b0321e84d8c623ff9c"
     },
     {
       "sourcePaths": [
@@ -146,7 +146,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/skills/claude/angular-best-practices.md",
       "targetPath": ".claude/skills/angular-best-practices.md",
-      "checksum": "sha256:187e4b41fbbfae9fbf0c92e9f91a1f14bd7c3b98df87f535686742dd8ea454df"
+      "checksum": "sha256:82f6b526bd2c91660b73e5661842841114b092679f9d7733e3572e34745b6008"
     },
     {
       "sourcePaths": [
@@ -170,7 +170,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/skills/kiro/angular-best-practices.md",
       "targetPath": ".kiro/skills/angular-best-practices.md",
-      "checksum": "sha256:187e4b41fbbfae9fbf0c92e9f91a1f14bd7c3b98df87f535686742dd8ea454df"
+      "checksum": "sha256:82f6b526bd2c91660b73e5661842841114b092679f9d7733e3572e34745b6008"
     },
     {
       "sourcePaths": [
@@ -191,6 +191,6 @@
   ],
   "managedBy": "indomito-context-compiler",
   "artifactFormatVersion": 1,
-  "sourceCommit": "18b51b2185076f3aeca8ddc6c4f0e35b271ce797",
+  "sourceCommit": "5df35578d03a7d14e7cb857b8f3819edcdd11f7d",
   "sourceDirty": true
 }
