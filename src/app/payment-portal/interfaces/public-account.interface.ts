@@ -18,5 +18,6 @@ export interface PublicAccount {
   active: boolean;
   free: boolean;
   checkoutEnabled: boolean;
+  recaptchaSiteKey?: string;
   installments: PublicInstallment[];
 }

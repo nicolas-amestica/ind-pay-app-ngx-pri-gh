@@ -15,6 +15,7 @@ import { Panel } from 'primeng/panel';
 import { Message } from 'primeng/message';
 import { ThemeService } from '../../../core/theme/theme.service';
 import { PublicPayments } from '../../services/public-payments';
+import { RecaptchaService } from '../../services/recaptcha';
 import type { PublicAccount } from '../../interfaces/public-account.interface';
 import type { PortalAttempt } from '../../interfaces/portal-attempt.interface';
 import { newAttemptId, safeCheckoutUrl } from '../../fn/khipu-dev.fn';
@@ -42,8 +43,12 @@ import {
   },
 })
 export class LookupPage {
+  private readonly interactivePollingMs = 90_000;
+  private readonly pollingIntervalMs = 5_000;
   private checkoutKey: string | null = null;
   private resendKey: string | null = null;
+  private pollingDeadline = 0;
+  private pollingTimer: ReturnType<typeof setTimeout> | null = null;
   protected readonly paymentBusy = signal(false);
   protected readonly paymentError = signal('');
   protected readonly resendQueued = signal(false);
@@ -60,6 +65,7 @@ export class LookupPage {
   });
   protected readonly resendForm = new FormGroup({ email: this.resendEmail });
   private readonly api = inject(PublicPayments);
+  private readonly recaptcha = inject(RecaptchaService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly theme = inject(ThemeService);
   protected readonly form = new FormGroup({
@@ -88,6 +94,10 @@ export class LookupPage {
     this.pending().reduce((total, quota) => total + quota.outstanding, 0),
   );
 
+  constructor() {
+    this.destroyRef.onDestroy(() => this.stopAttemptPolling());
+  }
+
   protected lookup(): void {
     if (this.busy()) return;
     this.form.markAllAsTouched();
@@ -110,6 +120,7 @@ export class LookupPage {
             // Bloquear nuevos cobros antes de consultar, incluso si falla la recuperación.
             this.attempt.set({ id: recoveryId, status: 'RECONCILIATION_REQUIRED' });
             this.refreshAttempt();
+            this.startAttemptPolling();
           }
         },
         error: () => {
@@ -123,6 +134,7 @@ export class LookupPage {
   protected clear(): void {
     if (this.paymentBusy()) return;
     this.checkoutKey = null;
+    this.stopAttemptPolling();
     this.resendKey = null;
     this.attempt.set(null);
     this.fallbackCheckoutUrl.set(null);
@@ -154,38 +166,58 @@ export class LookupPage {
     if (this.email.invalid) return;
     const token = this.sessionToken();
     if (!token) return;
+    const siteKey = account.recaptchaSiteKey;
+    if (!siteKey) {
+      this.paymentError.set('El pago seguro no está disponible temporalmente. Intenta más tarde.');
+      return;
+    }
     const paymentWindow = window.open('/pago-en-proceso', '_blank');
     if (paymentWindow) paymentWindow.opener = null;
     this.checkoutKey ??= newAttemptId();
     this.email.disable();
     this.paymentBusy.set(true);
     this.paymentError.set('');
-    this.api
-      .checkout(this.email.getRawValue(), this.checkoutKey, token)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (attempt) => {
-          this.attempt.set(attempt);
-          this.paymentBusy.set(false);
-          const checkoutUrl = safeCheckoutUrl(attempt.paymentUrl);
-          if (attempt.status === 'PENDING_PAYMENT' && checkoutUrl) {
-            if (paymentWindow && !paymentWindow.closed) {
-              paymentWindow.location.replace(checkoutUrl);
-            } else {
-              this.fallbackCheckoutUrl.set(checkoutUrl);
-              this.paymentError.set('El navegador bloqueó la pestaña de Khipu. Usa el botón de recuperación que aparece abajo.');
-            }
-          } else if (paymentWindow && !paymentWindow.closed) {
-            paymentWindow.close();
-          }
-        },
-        error: () => {
-          if (paymentWindow && !paymentWindow.closed) paymentWindow.close();
-          this.paymentBusy.set(false);
-          this.paymentError.set(
-            'No se pudo obtener el resultado. Reintenta esta misma solicitud; no se cambiará su referencia ni el correo.',
-          );
-        },
+    this.recaptcha
+      .execute(siteKey, 'khipu_checkout')
+      .then((recaptchaToken) => {
+        this.api
+          .checkout(this.email.getRawValue(), this.checkoutKey!, token, recaptchaToken)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (attempt) => {
+              this.attempt.set(attempt);
+              this.startAttemptPolling();
+              this.paymentBusy.set(false);
+              const checkoutUrl = safeCheckoutUrl(attempt.paymentUrl);
+              if (attempt.status === 'PENDING_PAYMENT' && checkoutUrl) {
+                if (paymentWindow && !paymentWindow.closed) {
+                  paymentWindow.location.replace(checkoutUrl);
+                } else {
+                  this.fallbackCheckoutUrl.set(checkoutUrl);
+                  this.paymentError.set(
+                    'El navegador bloqueó la pestaña de Khipu. Usa el botón de recuperación que aparece abajo.',
+                  );
+                }
+              } else if (paymentWindow && !paymentWindow.closed) {
+                paymentWindow.close();
+              }
+            },
+            error: () => {
+              if (paymentWindow && !paymentWindow.closed) paymentWindow.close();
+              this.paymentBusy.set(false);
+              this.paymentError.set(
+                'No se pudo obtener el resultado. Reintenta esta misma solicitud; no se cambiará su referencia ni el correo.',
+              );
+            },
+          });
+      })
+      .catch(() => {
+        if (paymentWindow && !paymentWindow.closed) paymentWindow.close();
+        this.email.enable();
+        this.paymentBusy.set(false);
+        this.paymentError.set(
+          'No fue posible validar la seguridad del pago. Revisa tu conexión e intenta nuevamente.',
+        );
       });
   }
 
@@ -203,12 +235,25 @@ export class LookupPage {
         next: (updated) => {
           this.attempt.set(updated);
           this.paymentBusy.set(false);
-          if (updated.status === 'PENDING_PAYMENT' && !this.account()?.reviewRequired && !this.fallbackCheckoutUrl()) {
+          if (
+            updated.status === 'PENDING_PAYMENT' &&
+            !this.account()?.reviewRequired &&
+            !this.fallbackCheckoutUrl()
+          ) {
             this.fallbackCheckoutUrl.set(safeCheckoutUrl(updated.paymentUrl));
           }
-          if (updated.status === 'CONFIRMED' || updated.status === 'REVIEW_REQUIRED' || updated.status === 'REVERSED') {
+          if (
+            updated.status === 'CONFIRMED' ||
+            updated.status === 'REVIEW_REQUIRED' ||
+            updated.status === 'PROVIDER_REVIEW_REQUIRED' ||
+            updated.status === 'UNPAID_FINAL' ||
+            updated.status === 'REVERSED'
+          ) {
             this.fallbackCheckoutUrl.set(null);
             this.refreshAccount();
+            this.stopAttemptPolling();
+          } else {
+            this.scheduleAttemptPoll();
           }
         },
         error: () => {
@@ -216,13 +261,19 @@ export class LookupPage {
           this.paymentError.set(
             'No se pudo consultar el estado. No realices otro pago hasta verificar el intento actual.',
           );
+          this.scheduleAttemptPoll();
         },
       });
   }
 
   protected onPortalFocus(): void {
     const current = this.attempt();
-    if (current && ['PENDING_PAYMENT', 'RECONCILIATION_REQUIRED'].includes(current.status)) {
+    if (
+      current &&
+      ['PENDING_PAYMENT', 'VERIFYING_PROVIDER', 'RECONCILIATION_REQUIRED'].includes(
+        current.status,
+      )
+    ) {
       this.refreshAttempt();
     }
   }
@@ -235,10 +286,53 @@ export class LookupPage {
     const token = this.sessionToken();
     const session = this.account()?.session;
     if (!token || !session) return;
-    this.api.account(token).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (account) => this.account.set({ ...account, session }),
-      error: () => this.paymentError.set('El pago fue consultado, pero no fue posible actualizar la lista de cuotas. Cierra la consulta e ingresa nuevamente.'),
-    });
+    this.api
+      .account(token)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (account) => this.account.set({ ...account, session }),
+        error: () =>
+          this.paymentError.set(
+            'El pago fue consultado, pero no fue posible actualizar la lista de cuotas. Cierra la consulta e ingresa nuevamente.',
+          ),
+      });
+  }
+
+  private startAttemptPolling(): void {
+    this.pollingDeadline = Date.now() + this.interactivePollingMs;
+    this.scheduleAttemptPoll();
+  }
+
+  private scheduleAttemptPoll(): void {
+    this.stopPollingTimer();
+    const current = this.attempt();
+    if (
+      !current ||
+      Date.now() >= this.pollingDeadline ||
+      !['PENDING_PAYMENT', 'VERIFYING_PROVIDER', 'RECONCILIATION_REQUIRED'].includes(current.status)
+    )
+      return;
+    this.pollingTimer = globalThis.setTimeout(() => this.refreshAttempt(), this.pollingIntervalMs);
+  }
+
+  private stopPollingTimer(): void {
+    if (this.pollingTimer === null) return;
+    globalThis.clearTimeout(this.pollingTimer);
+    this.pollingTimer = null;
+  }
+
+  private stopAttemptPolling(): void {
+    this.pollingDeadline = 0;
+    this.stopPollingTimer();
+  }
+
+  protected retryAfterUnpaid(): void {
+    if (this.attempt()?.status !== 'UNPAID_FINAL' || this.paymentBusy()) return;
+    this.checkoutKey = null;
+    this.attempt.set(null);
+    this.email.enable();
+    this.paymentError.set('');
+    this.refreshAccount();
   }
 
   protected resendReceipt(): void {

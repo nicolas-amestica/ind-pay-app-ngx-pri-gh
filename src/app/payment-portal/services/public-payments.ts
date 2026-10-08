@@ -11,11 +11,16 @@ export class PublicPayments {
   private readonly http = inject(HttpClient);
 
   /** Firma de sesión exclusiva del portal; no adjunta el token administrativo. */
-  checkout(email: string, requestId: string, token: string): Observable<PortalAttempt> {
+  checkout(
+    email: string,
+    requestId: string,
+    token: string,
+    recaptchaToken: string,
+  ): Observable<PortalAttempt> {
     return this.http
       .post<{ data: PortalAttempt }>(
         `${environment.apiUrl}/pagos/portal/checkout`,
-        { email },
+        { email, recaptchaToken },
         {
           headers: { Authorization: `Bearer ${token}`, 'Idempotency-Key': requestId },
         },

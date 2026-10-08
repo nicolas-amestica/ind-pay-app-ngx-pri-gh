@@ -5,9 +5,17 @@ import { LookupPage } from './lookup.page';
 import { PublicPayments } from '../../services/public-payments';
 import { ThemeService } from '../../../core/theme/theme.service';
 import type { PublicAccount } from '../../interfaces/public-account.interface';
+import { RecaptchaService } from '../../services/recaptcha';
 
 describe('LookupPage', () => {
-  const api = { lookup: vi.fn(), checkout: vi.fn(), attempt: vi.fn(), account: vi.fn(), resendReceipt: vi.fn() };
+  const api = {
+    lookup: vi.fn(),
+    checkout: vi.fn(),
+    attempt: vi.fn(),
+    account: vi.fn(),
+    resendReceipt: vi.fn(),
+  };
+  const recaptcha = { execute: vi.fn() };
   const account: PublicAccount = {
     active: true,
     free: false,
@@ -34,14 +42,21 @@ describe('LookupPage', () => {
   };
   beforeEach(() => {
     vi.resetAllMocks();
+    recaptcha.execute.mockResolvedValue('recaptcha-token');
     api.lookup.mockReturnValue(of(account));
     api.account.mockReturnValue(of(account));
-    vi.spyOn(window, 'open').mockReturnValue({ closed: false, opener: null, close: vi.fn(), location: { replace: vi.fn() } } as unknown as Window);
+    vi.spyOn(window, 'open').mockReturnValue({
+      closed: false,
+      opener: null,
+      close: vi.fn(),
+      location: { replace: vi.fn() },
+    } as unknown as Window);
     TestBed.configureTestingModule({
       imports: [LookupPage],
       providers: [
         { provide: PublicPayments, useValue: api },
         { provide: ThemeService, useValue: { label: () => 'Cambiar tema', toggle: vi.fn() } },
+        { provide: RecaptchaService, useValue: recaptcha },
       ],
     });
   });
@@ -65,6 +80,7 @@ describe('LookupPage', () => {
       of({
         ...account,
         checkoutEnabled: true,
+        recaptchaSiteKey: 'site-key',
         session: {
           accessToken: 'passenger-session',
           expiresAt: Math.floor(Date.now() / 1000) + 600,
@@ -92,12 +108,14 @@ describe('LookupPage', () => {
     input(root, '#receipt-email', 'familia@example.com');
     submit(root);
     submit(root);
+    await fixture.whenStable();
     expect(api.checkout).toHaveBeenCalledTimes(1);
     const original = api.checkout.mock.calls[0];
     expect(original).toEqual([
       'familia@example.com',
       expect.stringMatching(/^[0-9A-HJKMNP-TV-Z]{26}$/),
       'passenger-session',
+      'recaptcha-token',
     ]);
     response.error(new Error('secret-provider-error'));
     await fixture.whenStable();
@@ -124,7 +142,7 @@ describe('LookupPage', () => {
     await fixture.whenStable();
     expect(window.open).toHaveBeenCalledWith('/pago-en-proceso', '_blank');
     expect(root.querySelector('a[target="_blank"]')).toBeNull();
-    expect(root.textContent).toContain('Abrir Khipu no confirma');
+    expect(root.textContent).toContain('no vuelvas a pagar mientras verificamos');
     api.attempt.mockReturnValue(of({ id: 'attempt', status: 'CONFIRMED' }));
     [...root.querySelectorAll('button')]
       .find((b) => b.textContent?.includes('Consultar estado'))!
@@ -146,7 +164,9 @@ describe('LookupPage', () => {
     expect(root.textContent).toContain('no permite recuperar comprobantes anteriores');
     expect(root.textContent).not.toContain('Descargar');
     input(root, '#resend-receipt-email', 'otro@example.com');
-    const resendForm = (root.querySelector('#resend-receipt-email') as HTMLInputElement).closest('form')!;
+    const resendForm = (root.querySelector('#resend-receipt-email') as HTMLInputElement).closest(
+      'form',
+    )!;
     resendForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await fixture.whenStable();
     expect(api.resendReceipt).toHaveBeenCalledWith(
@@ -156,7 +176,9 @@ describe('LookupPage', () => {
       'passenger-session',
     );
     expect(root.textContent).toContain('La copia fue solicitada');
-    [...root.querySelectorAll('button')].find((b) => b.textContent?.includes('Cerrar consulta'))!.click();
+    [...root.querySelectorAll('button')]
+      .find((b) => b.textContent?.includes('Cerrar consulta'))!
+      .click();
     await fixture.whenStable();
     expect(root.querySelector('#resend-receipt-email')).toBeNull();
   });

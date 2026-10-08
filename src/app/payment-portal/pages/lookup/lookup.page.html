@@ -173,6 +173,25 @@
                 <button pButton type="submit" [disabled]="paymentBusy()">
                   {{ paymentBusy() ? 'Abriendo Khipu…' : 'Pagar cuota con Khipu' }}
                 </button>
+                <p class="text-xs text-muted">
+                  Este sitio está protegido por reCAPTCHA y se aplican la
+                  <a
+                    class="underline"
+                    href="https://policies.google.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Política de Privacidad</a
+                  >
+                  y los
+                  <a
+                    class="underline"
+                    href="https://policies.google.com/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Términos de Servicio</a
+                  >
+                  de Google.
+                </p>
               </form>
             }
             @if (attempt(); as current) {
@@ -180,8 +199,15 @@
                 @switch (current.status) {
                   @case ('PENDING_PAYMENT') {
                     <p-message severity="info"
-                      >Pago pendiente. Abrir Khipu no confirma que el dinero se haya
-                      recibido.</p-message
+                      >El pago está pendiente en Khipu. Si ya autorizaste la transferencia, no
+                      vuelvas a pagar mientras verificamos su resultado.</p-message
+                    >
+                  }
+                  @case ('VERIFYING_PROVIDER') {
+                    <p-message severity="info"
+                      >Tu banco autorizó la operación y Khipu todavía la está verificando. No
+                      vuelvas a pagar esta cuota. Puedes cerrar esta página y consultar nuevamente
+                      más tarde; la verificación continuará automáticamente.</p-message
                     >
                   }
                   @case ('CONFIRMED') {
@@ -202,8 +228,17 @@
                       estado como un rechazo.</p-message
                     >
                   }
+                  @case ('PROVIDER_REVIEW_REQUIRED') {
+                    <p-message severity="warn"
+                      >No pudimos confirmar de forma concluyente el resultado con Khipu. No
+                      intentes pagar nuevamente esta cuota; el equipo de Giras Indómito debe
+                      revisarla.</p-message
+                    >
+                  }
                   @case ('UNPAID_FINAL') {
-                    <p-message severity="info">El intento finalizó sin registrar un pago.</p-message>
+                    <p-message severity="info"
+                      >El intento finalizó sin registrar un pago.</p-message
+                    >
                   }
                   @case ('REVERSED') {
                     <p-message severity="warn"
@@ -211,6 +246,12 @@
                       pagar.</p-message
                     >
                   }
+                }
+                @if (current.lastCheckedAt) {
+                  <p class="text-sm text-muted">
+                    Última verificación con Khipu:
+                    {{ current.lastCheckedAt | date: 'dd/MM/yyyy HH:mm:ss' : 'UTC' }}.
+                  </p>
                 }
                 @if (current.status === 'CONFIRMED' && !current.receiptReady) {
                   <p-message severity="info"
@@ -221,10 +262,15 @@
                 @if (current.status === 'CONFIRMED' && current.receiptReady) {
                   @if (resendQueued()) {
                     <p-message severity="success"
-                      >La copia fue solicitada. Revisa también la carpeta de correo no deseado.</p-message
+                      >La copia fue solicitada. Revisa también la carpeta de correo no
+                      deseado.</p-message
                     >
                   } @else {
-                    <form [formGroup]="resendForm" (ngSubmit)="resendReceipt()" class="flex flex-col gap-3">
+                    <form
+                      [formGroup]="resendForm"
+                      (ngSubmit)="resendReceipt()"
+                      class="flex flex-col gap-3"
+                    >
                       <label for="resend-receipt-email">Reenviar una copia a otra casilla</label>
                       <input
                         pInputText
@@ -252,6 +298,11 @@
                   <a pButton [href]="url" target="_blank" rel="noopener noreferrer"
                     >Continuar a Khipu</a
                   >
+                }
+                @if (current.status === 'UNPAID_FINAL') {
+                  <button pButton type="button" (click)="retryAfterUnpaid()">
+                    Intentar pagar nuevamente
+                  </button>
                 }
                 <button
                   pButton

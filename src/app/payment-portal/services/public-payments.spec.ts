@@ -15,13 +15,16 @@ describe('PublicPayments', () => {
   it('crea un intento sin enviar monto, RUT ni cuenta desde el navegador', () => {
     const result = { id: 'attempt', status: 'RECONCILIATION_REQUIRED' };
     TestBed.inject(PublicPayments)
-      .checkout('family@example.com', 'request-id', 'passenger-token')
+      .checkout('family@example.com', 'request-id', 'passenger-token', 'recaptcha-token')
       .subscribe((value) => expect(value).toEqual(result));
     const request = TestBed.inject(HttpTestingController).expectOne(
       `${environment.apiUrl}/pagos/portal/checkout`,
     );
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ email: 'family@example.com' });
+    expect(request.request.body).toEqual({
+      email: 'family@example.com',
+      recaptchaToken: 'recaptcha-token',
+    });
     expect(request.request.headers.get('Authorization')).toBe('Bearer passenger-token');
     expect(request.request.headers.get('Idempotency-Key')).toBe('request-id');
     expect(request.request.withCredentials).toBe(false);
