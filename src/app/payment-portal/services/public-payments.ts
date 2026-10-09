@@ -72,11 +72,12 @@ export class PublicPayments {
   }
 
   /** Los datos viajan en el cuerpo, nunca en URL, almacenamiento web ni credenciales administrativas. */
-  lookup(rut: string, tripCode: string): Observable<PublicAccount> {
+  lookup(rut: string, tripCode: string, accountId?: string): Observable<PublicAccount> {
     return this.http
       .post<{ data: PublicAccount }>(`${environment.apiUrl}/pagos/consultas`, {
         rut: rut.trim(),
         tripCode: tripCode.trim().toUpperCase(),
+        ...(accountId ? { accountId } : {}),
       })
       .pipe(map(({ data }) => data));
   }

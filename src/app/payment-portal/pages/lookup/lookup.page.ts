@@ -81,6 +81,10 @@ export class LookupPage {
   protected readonly busy = signal(false);
   protected readonly failed = signal(false);
   protected readonly account = signal<PublicAccount | null>(null);
+  protected readonly masterAccounts = signal<{ accountId: string; tripId: string; name: string }[]>(
+    [],
+  );
+  private masterCredentials: { rut: string; code: string } | null = null;
   protected readonly pending = computed(
     () => this.account()?.installments.filter((q) => q.status === 'PENDING') ?? [],
   );
@@ -111,7 +115,16 @@ export class LookupPage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (account) => {
+          if (account.accounts?.length) {
+            this.masterCredentials = { rut, code: tripCode };
+            this.masterAccounts.set(account.accounts);
+            this.form.enable();
+            this.busy.set(false);
+            return;
+          }
           this.account.set(account);
+          this.masterAccounts.set([]);
+          this.masterCredentials = null;
           this.form.reset();
           this.form.enable();
           this.busy.set(false);
@@ -131,6 +144,29 @@ export class LookupPage {
       });
   }
 
+  protected selectMasterAccount(accountId: string): void {
+    if (this.busy() || !this.masterCredentials) return;
+    this.busy.set(true);
+    this.failed.set(false);
+    const { rut, code } = this.masterCredentials;
+    this.api
+      .lookup(rut, code, accountId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (account) => {
+          this.account.set(account);
+          this.masterAccounts.set([]);
+          this.masterCredentials = null;
+          this.form.reset();
+          this.busy.set(false);
+        },
+        error: () => {
+          this.failed.set(true);
+          this.busy.set(false);
+        },
+      });
+  }
+
   protected clear(): void {
     if (this.paymentBusy()) return;
     this.checkoutKey = null;
@@ -145,6 +181,8 @@ export class LookupPage {
     this.resendEmail.reset();
     this.resendEmail.enable();
     this.account.set(null);
+    this.masterAccounts.set([]);
+    this.masterCredentials = null;
     this.failed.set(false);
     this.form.reset();
   }
@@ -270,9 +308,7 @@ export class LookupPage {
     const current = this.attempt();
     if (
       current &&
-      ['PENDING_PAYMENT', 'VERIFYING_PROVIDER', 'RECONCILIATION_REQUIRED'].includes(
-        current.status,
-      )
+      ['PENDING_PAYMENT', 'VERIFYING_PROVIDER', 'RECONCILIATION_REQUIRED'].includes(current.status)
     ) {
       this.refreshAttempt();
     }

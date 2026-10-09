@@ -6,6 +6,7 @@ export const passengerRutValidator: ValidatorFn = (control) =>
 
 export const tripCodeValidator: ValidatorFn = (control) =>
   typeof control.value === 'string' &&
-  /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/.test(control.value.trim().toUpperCase())
+  (/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/.test(control.value.trim().toUpperCase()) ||
+    /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{16,64}$/.test(control.value.trim().toUpperCase()))
     ? null
     : { tripCode: true };
