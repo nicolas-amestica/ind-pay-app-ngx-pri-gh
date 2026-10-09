@@ -11,6 +11,7 @@ export interface PublicInstallment {
 
 /** Respuesta pública mínima: no contiene datos personales ni identificadores de cuentas. */
 export interface PublicAccount {
+  accounts?: { accountId: string; tripId: string; name: string }[];
   openAttemptId?: string;
   reviewRequired?: boolean;
   reviewAttemptId?: string;
