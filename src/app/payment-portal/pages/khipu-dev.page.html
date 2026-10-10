@@ -40,7 +40,14 @@
           <p>Inicia el puente local con tu sesión AWS de desarrollo para habilitar la prueba.</p>
         }
         <div>
-          <button pButton severity="secondary" outlined [disabled]="busy()" (click)="connect()">
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            [loading]="busy()"
+            [disabled]="busy()"
+            (click)="connect()"
+          >
             Comprobar conexión
           </button>
         </div>
@@ -55,7 +62,14 @@
           <p class="break-all font-mono text-sm">{{ id() }}</p>
           <p role="status">{{ status() }}</p>
           <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <button pButton severity="secondary" outlined [disabled]="busy()" (click)="refresh()">
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              [loading]="busy()"
+              [disabled]="busy()"
+              (click)="refresh()"
+            >
               Consultar estado
             </button>
             @if (attempt() && attempt()?.status !== 'CONFIRMED') {
@@ -63,6 +77,7 @@
                 pButton
                 severity="secondary"
                 outlined
+                [loading]="busy()"
                 [disabled]="busy()"
                 (click)="refresh(true)"
               >
@@ -82,7 +97,7 @@
         }
         @if (!attempt()) {
           <div>
-            <button pButton [disabled]="busy() || !ready()" (click)="create()">
+            <button pButton [loading]="busy()" [disabled]="busy() || !ready()" (click)="create()">
               {{ id() ? 'Reintentar con el mismo ID' : 'Crear intento de prueba' }}
             </button>
           </div>
@@ -109,6 +124,7 @@
                 type="submit"
                 severity="secondary"
                 outlined
+                [loading]="busy()"
                 [disabled]="busy() || recoveryId.invalid"
               >
                 Recuperar intento

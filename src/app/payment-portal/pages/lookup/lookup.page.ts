@@ -322,15 +322,21 @@ export class LookupPage {
     const token = this.sessionToken();
     const session = this.account()?.session;
     if (!token || !session) return;
+    this.paymentBusy.set(true);
     this.api
       .account(token)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (account) => this.account.set({ ...account, session }),
-        error: () =>
+        next: (account) => {
+          this.account.set({ ...account, session });
+          this.paymentBusy.set(false);
+        },
+        error: () => {
+          this.paymentBusy.set(false);
           this.paymentError.set(
             'El pago fue consultado, pero no fue posible actualizar la lista de cuotas. Cierra la consulta e ingresa nuevamente.',
-          ),
+          );
+        },
       });
   }
 

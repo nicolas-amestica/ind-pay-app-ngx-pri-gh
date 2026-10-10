@@ -79,9 +79,7 @@
               <p-message severity="error">Ingresa un código de acceso válido.</p-message>
             }
           </div>
-          <button pButton type="submit" [disabled]="busy()">
-            {{ busy() ? 'Consultando…' : 'Ver cuotas' }}
-          </button>
+          <button pButton type="submit" [loading]="busy()" [disabled]="busy()">Ver cuotas</button>
         </form>
       </p-panel>
       @if (masterAccounts().length) {
@@ -93,6 +91,8 @@
                 type="button"
                 severity="secondary"
                 outlined
+                class="min-w-0 max-w-full"
+                [loading]="busy()"
                 [disabled]="busy()"
                 (click)="selectMasterAccount(option.accountId)"
               >
@@ -190,8 +190,8 @@
                 @if (email.touched && email.invalid) {
                   <p-message severity="error">Ingresa un correo válido.</p-message>
                 }
-                <button pButton type="submit" [disabled]="paymentBusy()">
-                  {{ paymentBusy() ? 'Abriendo Khipu…' : 'Pagar cuota con Khipu' }}
+                <button pButton type="submit" [loading]="paymentBusy()" [disabled]="paymentBusy()">
+                  Pagar cuota con Khipu
                 </button>
                 <p class="text-xs text-muted">
                   Este sitio está protegido por reCAPTCHA y se aplican la
@@ -270,7 +270,7 @@
                 @if (current.lastCheckedAt) {
                   <p class="text-sm text-muted">
                     Última verificación con Khipu:
-                    {{ current.lastCheckedAt | date: 'dd/MM/yyyy HH:mm:ss' : 'UTC' }}.
+                    {{ current.lastCheckedAt | date: 'dd/MM/yyyy HH:mm:ss' }}.
                   </p>
                 }
                 @if (current.status === 'CONFIRMED' && !current.receiptReady) {
@@ -308,8 +308,13 @@
                         Esta opción desaparece al cerrar la consulta y no permite recuperar
                         comprobantes anteriores.
                       </p>
-                      <button pButton type="submit" [disabled]="paymentBusy()">
-                        {{ paymentBusy() ? 'Solicitando…' : 'Reenviar comprobante' }}
+                      <button
+                        pButton
+                        type="submit"
+                        [loading]="paymentBusy()"
+                        [disabled]="paymentBusy()"
+                      >
+                        Reenviar comprobante
                       </button>
                     </form>
                   }
@@ -320,7 +325,13 @@
                   >
                 }
                 @if (current.status === 'UNPAID_FINAL') {
-                  <button pButton type="button" (click)="retryAfterUnpaid()">
+                  <button
+                    pButton
+                    type="button"
+                    [loading]="paymentBusy()"
+                    [disabled]="paymentBusy()"
+                    (click)="retryAfterUnpaid()"
+                  >
                     Intentar pagar nuevamente
                   </button>
                 }
@@ -329,10 +340,11 @@
                   type="button"
                   severity="secondary"
                   outlined
+                  [loading]="paymentBusy()"
                   [disabled]="paymentBusy()"
                   (click)="refreshAttempt()"
                 >
-                  {{ paymentBusy() ? 'Consultando…' : 'Consultar estado' }}
+                  Consultar estado
                 </button>
               </div>
             }
