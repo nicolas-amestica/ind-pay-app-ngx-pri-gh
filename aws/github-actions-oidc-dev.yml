@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Acceso OIDC de GitHub Actions para desplegar Indomito Pay en DEV
+
+Parameters:
+  ExistingOidcProviderArn:
+    Type: String
+    Default: ''
+
+Conditions:
+  CreateOidcProvider: !Equals [!Ref ExistingOidcProviderArn, '']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+
+  GitHubDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ind-dev-pay-github-deploy-role
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateOidcProvider
+                - !Ref GitHubOidcProvider
+                - !Ref ExistingOidcProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  - repo:nicolas-amestica/ind-pay-app-ngx-pri-gh:*
+                  - repo:nicolas-amestica@5573027/ind-pay-app-ngx-pri-gh@1409389165:*
+      Policies:
+        - PolicyName: deploy-pay-spa-dev
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [cloudformation:DescribeStacks]
+                Resource: '*'
+              - Effect: Allow
+                Action: [s3:GetBucketLocation, s3:ListBucket]
+                Resource: arn:aws:s3:::ind-dev-payments-spa-s3-dev-pri-use1
+              - Effect: Allow
+                Action: [s3:DeleteObject, s3:GetObject, s3:PutObject]
+                Resource: arn:aws:s3:::ind-dev-payments-spa-s3-dev-pri-use1/*
+              - Effect: Allow
+                Action: [cloudfront:CreateInvalidation, cloudfront:GetInvalidation]
+                Resource: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/*
+
+Outputs:
+  GitHubActionsRoleArn:
+    Value: !GetAtt GitHubDeployRole.Arn
