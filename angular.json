@@ -26,7 +26,13 @@
                 { "type": "anyComponentStyle", "maximumWarning": "4kB", "maximumError": "8kB" }
               ],
               "outputHashing": "all",
-              "fileReplacements": [{ "replace": "src/environments/environment.ts", "with": "src/environments/environment.production.ts" }]
+              "fileReplacements": [
+                { "replace": "src/environments/environment.ts", "with": "src/environments/environment.production.ts" },
+                {
+                  "replace": "src/app/payment-portal/payment-portal.routes.ts",
+                  "with": "src/app/payment-portal/payment-portal.routes.production.ts"
+                }
+              ]
             },
             "dev": {
               "budgets": [

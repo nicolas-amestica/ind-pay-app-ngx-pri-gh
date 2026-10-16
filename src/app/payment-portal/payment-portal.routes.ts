@@ -1,4 +1,5 @@
 import type { Routes } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 /** Rutas del portal publico de pagos. */
 export const PAYMENT_PORTAL_ROUTES: Routes = [
@@ -6,10 +7,14 @@ export const PAYMENT_PORTAL_ROUTES: Routes = [
   { path: 'retorno', loadComponent: () => import('./pages/payment-return/payment-return.page').then((m) => m.PaymentReturnPage) },
   { path: 'cancelado', loadComponent: () => import('./pages/payment-return/payment-return.page').then((m) => m.PaymentReturnPage) },
   { path: 'verificar-comprobante', loadComponent: () => import('./pages/receipt-verification/receipt-verification.page').then((m) => m.ReceiptVerificationPage) },
-  {
-    path: 'pruebas-khipu',
-    loadComponent: () => import('./pages/khipu-dev.page').then((m) => m.KhipuDevPage),
-  },
+  ...(!environment.production
+    ? [
+        {
+          path: 'pruebas-khipu',
+          loadComponent: () => import('./pages/khipu-dev.page').then((m) => m.KhipuDevPage),
+        },
+      ]
+    : []),
   { path: '', loadComponent: () => import('./pages/lookup/lookup.page').then((m) => m.LookupPage) },
   { path: '**', redirectTo: '' },
 ];

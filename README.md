@@ -165,9 +165,9 @@ Se ejecutan con Vitest (entorno `jsdom`, configurado en `vitest-base.config.ts` 
 | Ambiente | Dominio                      | Build               | Despliegue                                              |
 | -------- | ---------------------------- | ------------------- | ------------------------------------------------------- |
 | dev      | `pagos.dev.girasindomito.cl` | `npm run build:dev` | `npm run build:deploy:dev`                              |
-| prd      | pendiente                    | `npm run build:prd` | No disponible: `tools/deploy-spa.sh` solo acepta `dev`. |
+| prd      | `pagos.girasindomito.cl`     | `npm run build:prd` | `npm run deploy:prd`                                |
 
-El despliegue DEV usa el perfil AWS `pa-dev` en `us-east-1`: valida la cuenta, obtiene el bucket y la distribución CloudFront desde el stack `indomito-hub-infra-payments-cdn-dev`, sincroniza los assets con caché larga, sube `index.html` sin caché e invalida `/index.html`. Publica exclusivamente el artefacto de este repositorio, sin tocar el panel administrativo.
+El despliegue valida la cuenta correspondiente (`pa-dev` o `pa-prd`) en `us-east-1`, obtiene el bucket y la distribución CloudFront desde el stack aislado `indomito-hub-infra-payments-cdn-<stage>`, sincroniza los assets con caché larga, sube `index.html` sin caché e invalida `/index.html`. Publica exclusivamente el artefacto de este repositorio, sin tocar el panel administrativo.
 
 Atención: `build:deploy:dev` ejecuta primero `version:dev`, que modifica la versión, crea un commit y un tag, y los sube al remoto. Para evitar el push, ejecuta los pasos por separado y usa `node tools/versioning.js dev --no-push`. No hay pipelines de CI/CD en este repositorio.
 
