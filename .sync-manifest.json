@@ -10,7 +10,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/.claude/rules/global-rules.md",
       "targetPath": ".claude/rules/global-rules.md",
-      "checksum": "sha256:544bc3a61cf3dda987f13e11aa5628e32acd6ac5a9ec588ad97be10df18011e3"
+      "checksum": "sha256:158b782d1f2df91b37493048ce013527ec65a5130f48f8ef0c9b35142613e2da"
     },
     {
       "sourcePaths": [
@@ -88,7 +88,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/AGENTS.md",
       "targetPath": "AGENTS.md",
-      "checksum": "sha256:50f3819ee97ca5d28dc0df827b833ed06afdd7d5f60945e61becd3a57251eadb"
+      "checksum": "sha256:02a93dad60c5525eb1c2e2f6be7a92f32d3dcee0bfeafdfc24cc9972e352642f"
     },
     {
       "sourcePaths": [
@@ -100,7 +100,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/CLAUDE.md",
       "targetPath": ".claude/CLAUDE.md",
-      "checksum": "sha256:780f9407199b9d2a460d3a2ee475e6d713125357ea6bd63f085b47abbe788b24"
+      "checksum": "sha256:dbff98adeac3edfeaec1a2622450e808ebe676ecce93d9abf5c1650d8f136147"
     },
     {
       "sourcePaths": [
@@ -112,7 +112,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/GEMINI.md",
       "targetPath": ".gemini/GEMINI.md",
-      "checksum": "sha256:4d28ed0826e7391073e97262ec1980f174f5c366e3ba122b7e46329756709906"
+      "checksum": "sha256:570f0b07d834d76d7981f5da4e9f2fd57cdf3a03684c9b43b396588e81024bc9"
     },
     {
       "sourcePaths": [
@@ -163,7 +163,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/skills/claude/aws-naming-review.md",
       "targetPath": ".claude/skills/aws-naming-review.md",
-      "checksum": "sha256:71986852fc56bf70ef830b240328846a046c8d212d7df962bfcc51f6a5734e23"
+      "checksum": "sha256:d9f6663b20313cd3bf2dc8629f099b916f6696084238ccad394516ffc28b0c86"
     },
     {
       "sourcePaths": [
@@ -187,11 +187,11 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/skills/kiro/aws-naming-review.md",
       "targetPath": ".kiro/skills/aws-naming-review.md",
-      "checksum": "sha256:71986852fc56bf70ef830b240328846a046c8d212d7df962bfcc51f6a5734e23"
+      "checksum": "sha256:d9f6663b20313cd3bf2dc8629f099b916f6696084238ccad394516ffc28b0c86"
     }
   ],
   "managedBy": "indomito-context-compiler",
   "artifactFormatVersion": 1,
-  "sourceCommit": "ed8309ae3adee8e3aad37f97026ff0b3334e7422",
+  "sourceCommit": "fb753fad2d9c7dae73ce0b5f0461b6f5a470298f",
   "sourceDirty": true
 }
