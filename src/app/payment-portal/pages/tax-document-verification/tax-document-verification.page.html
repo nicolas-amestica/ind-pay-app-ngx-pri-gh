@@ -1,0 +1,160 @@
+<main class="min-h-screen bg-canvas px-4 py-8 text-ink print:bg-white print:p-0 print:text-black">
+  <section class="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <header class="flex flex-wrap items-center justify-between gap-4 print:hidden">
+      <div>
+        <p class="text-sm text-muted">Documentos tributarios electrónicos</p>
+        <h1 class="mt-2 text-3xl font-semibold">Consultar boleta electrónica</h1>
+      </div>
+      <a pButton severity="secondary" outlined routerLink="/">Portal de pagos</a>
+    </header>
+
+    <p-message severity="info" class="print:hidden"
+      >Ingresa los datos impresos en la boleta para comprobar su autenticidad y obtener una
+      representación imprimible.</p-message
+    >
+
+    <p-panel header="Datos de la boleta" class="print:hidden">
+      <form [formGroup]="form" (ngSubmit)="verify()" class="grid gap-4 sm:grid-cols-3 sm:items-end">
+        <div class="flex flex-col gap-2">
+          <label for="tax-folio">Folio</label>
+          <p-inputnumber
+            inputId="tax-folio"
+            formControlName="folio"
+            [useGrouping]="false"
+            [min]="1"
+          />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label for="tax-date">Fecha de emisión</label>
+          <p-datepicker
+            inputId="tax-date"
+            formControlName="issueDate"
+            dateFormat="dd-mm-yy"
+            [showIcon]="true"
+            [maxDate]="today"
+          />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label for="tax-amount">Monto total</label>
+          <p-inputnumber
+            inputId="tax-amount"
+            formControlName="amount"
+            mode="currency"
+            currency="CLP"
+            locale="es-CL"
+            [min]="1"
+          />
+        </div>
+        <button pButton type="submit" class="sm:col-span-3" [loading]="busy()" [disabled]="busy()">
+          Consultar boleta
+        </button>
+      </form>
+      @if (form.touched && form.invalid) {
+        <p-message severity="error">Completa el folio, la fecha y el monto total.</p-message>
+      }
+    </p-panel>
+
+    @if (result(); as document) {
+      @if (document.authentic) {
+        <p-message severity="success" class="print:hidden"
+          >La boleta electrónica es auténtica y coincide con los datos consultados.</p-message
+        >
+        <article
+          class="rounded-xl border border-line/75 bg-surface p-5 shadow-sm dark:border-line/55 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none"
+        >
+          <header class="border-b border-line/75 pb-4 dark:border-line/55 print:border-black">
+            <p class="text-xl font-semibold">{{ document.issuerName }}</p>
+            <p>RUT {{ document.issuerRut }}</p>
+            <p>{{ document.issuerActivity }}</p>
+            <p>{{ document.issuerAddress }}, {{ document.issuerCommune }}</p>
+            <div class="mt-4 border-2 border-red-700 p-3 text-center text-red-700">
+              <p class="font-semibold">RUT {{ document.issuerRut }}</p>
+              <p>BOLETA ELECTRÓNICA</p>
+              <p>N.º {{ document.folio }}</p>
+              <p>S.I.I.</p>
+            </div>
+          </header>
+
+          <p class="my-4 text-right">
+            Fecha de emisión: {{ document.issueDate | date: 'dd-MM-yyyy' : 'UTC' }}
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left">
+              <thead>
+                <tr class="border-b border-line/75 dark:border-line/55 print:border-black">
+                  <th class="py-2">Descripción</th>
+                  <th class="py-2 text-right">Cantidad</th>
+                  <th class="py-2 text-right">Precio</th>
+                  <th class="py-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of document.items ?? []; track $index) {
+                  <tr class="border-b border-line/75 dark:border-line/55 print:border-black">
+                    <td class="py-2">
+                      {{ item.description }}
+                      @if (item.exempt) {
+                        <span>(Exento)</span>
+                      }
+                    </td>
+                    <td class="py-2 text-right">{{ item.quantity }} {{ item.unit }}</td>
+                    <td class="py-2 text-right">
+                      {{ item.unitPrice | currency: 'CLP' : 'symbol-narrow' : '1.0-0' }}
+                    </td>
+                    <td class="py-2 text-right">
+                      {{
+                        item.quantity * item.unitPrice | currency: 'CLP' : 'symbol-narrow' : '1.0-0'
+                      }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <dl class="ml-auto mt-4 grid max-w-sm grid-cols-2 gap-2 text-right">
+            @if (document.netAmount) {
+              <dt>Neto</dt>
+              <dd>{{ document.netAmount | currency: 'CLP' : 'symbol-narrow' : '1.0-0' }}</dd>
+            }
+            @if (document.vatAmount) {
+              <dt>IVA 19%</dt>
+              <dd>{{ document.vatAmount | currency: 'CLP' : 'symbol-narrow' : '1.0-0' }}</dd>
+            }
+            @if (document.exemptAmount) {
+              <dt>Exento</dt>
+              <dd>{{ document.exemptAmount | currency: 'CLP' : 'symbol-narrow' : '1.0-0' }}</dd>
+            }
+            <dt class="font-semibold">Total</dt>
+            <dd class="font-semibold">
+              {{ document.totalAmount | currency: 'CLP' : 'symbol-narrow' : '1.0-0' }}
+            </dd>
+          </dl>
+          <div class="mt-6 text-center">
+            <canvas
+              #barcode
+              class="mx-auto max-w-full"
+              aria-label="Timbre electrónico SII en formato PDF417"
+            ></canvas>
+            <p class="mt-2 text-sm">Timbre electrónico SII</p>
+            <p class="text-sm">
+              Resolución SII N.º {{ document.resolutionNumber }} de
+              {{ document.resolutionDate | date: 'yyyy' : 'UTC' }}
+            </p>
+            <p class="text-sm">
+              Verifique documento: https://pagos.girasindomito.cl/consultar-boleta
+            </p>
+          </div>
+        </article>
+        <button pButton type="button" class="print:hidden" (click)="print()">
+          <span class="icon-[tabler--printer] size-4" aria-hidden="true"></span> Imprimir o guardar
+          en PDF
+        </button>
+      } @else {
+        <p-message severity="error"
+          >No encontramos una boleta que coincida con los datos ingresados. Revisa el folio, fecha y
+          monto.</p-message
+        >
+      }
+    }
+  </section>
+</main>

@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import type { PublicAccount } from '../interfaces/public-account.interface';
 import type { PortalAttempt } from '../interfaces/portal-attempt.interface';
 import type { ReceiptVerification } from '../interfaces/receipt-verification.interface';
+import type { TaxDocumentVerification } from '../interfaces/tax-document-verification.interface';
 
 @Injectable({ providedIn: 'root' })
 export class PublicPayments {
@@ -53,6 +54,20 @@ export class PublicPayments {
         `${environment.apiUrl}/pagos/comprobantes/verificaciones`,
         { code: code.trim().toUpperCase() },
       )
+      .pipe(map(({ data }) => data));
+  }
+
+  verifyTaxDocument(
+    folio: number,
+    issueDate: string,
+    amount: number,
+  ): Observable<TaxDocumentVerification> {
+    return this.http
+      .post<{ data: TaxDocumentVerification }>(`${environment.apiUrl}/pagos/boletas/consultas`, {
+        folio: String(folio),
+        issueDate,
+        amount,
+      })
       .pipe(map(({ data }) => data));
   }
 

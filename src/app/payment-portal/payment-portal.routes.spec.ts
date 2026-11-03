@@ -8,6 +8,7 @@ describe('PAYMENT_PORTAL_ROUTES', () => {
     expect(publicPaths).not.toContain('tesoreria');
     expect(publicPaths).not.toContain('cobranza');
     expect(publicPaths).toContain('verificar-comprobante');
+    expect(publicPaths).toContain('consultar-boleta');
     expect(publicPaths).toContain('retorno');
     expect(publicPaths).not.toContain('administracion');
   });

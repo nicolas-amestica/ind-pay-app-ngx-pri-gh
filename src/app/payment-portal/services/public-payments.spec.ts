@@ -64,4 +64,15 @@ describe('PublicPayments', () => {
     expect(request.request.withCredentials).toBe(false);
     request.flush({ data: { active: true, free: true, checkoutEnabled: false, installments: [] } });
   });
+  it('consulta una boleta sin adjuntar credenciales ni datos del pago', () => {
+    TestBed.inject(PublicPayments).verifyTaxDocument(87, '2026-11-02', 11900).subscribe();
+    const request = TestBed.inject(HttpTestingController).expectOne(
+      `${environment.apiUrl}/pagos/boletas/consultas`,
+    );
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ folio: '87', issueDate: '2026-11-02', amount: 11900 });
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    expect(request.request.withCredentials).toBe(false);
+    request.flush({ data: { authentic: false } });
+  });
 });
