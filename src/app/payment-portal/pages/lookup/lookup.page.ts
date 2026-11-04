@@ -88,6 +88,7 @@ export class LookupPage {
   protected readonly pending = computed(
     () => this.account()?.installments.filter((q) => q.status === 'PENDING') ?? [],
   );
+  protected readonly nextInstallment = computed(() => this.pending()[0] ?? null);
   protected readonly paid = computed(
     () => this.account()?.installments.filter((q) => q.status === 'PAID') ?? [],
   );

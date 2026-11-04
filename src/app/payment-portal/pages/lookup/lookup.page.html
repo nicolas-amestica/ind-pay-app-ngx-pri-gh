@@ -167,6 +167,23 @@
       ) {
         <p-panel [header]="attempt() ? 'Estado del intento de pago' : 'Pagar la siguiente cuota'">
           <div class="flex max-w-lg flex-col gap-4" [attr.aria-busy]="paymentBusy()">
+            @if (attempt()?.installmentNumber; as installmentNumber) {
+              <div class="rounded-xl border border-line bg-surface-subtle p-4">
+                <p class="text-sm text-muted">Cuota asociada a este pago</p>
+                <p class="mt-1 text-lg font-semibold">Cuota {{ installmentNumber }}</p>
+              </div>
+            } @else if (!attempt()) {
+              @if (nextInstallment(); as next) {
+                <div class="rounded-xl border border-line bg-surface-subtle p-4">
+                  <p class="text-sm text-muted">Cuota que vas a pagar</p>
+                  <p class="mt-1 text-lg font-semibold">Cuota {{ next.number }}</p>
+                  <p class="mt-1 text-sm text-muted">
+                    {{ next.outstanding | currency: 'CLP' : 'symbol-narrow' : '1.0-0' }} · vence el
+                    {{ next.dueDate | date: 'dd/MM/yyyy' : 'UTC' }}
+                  </p>
+                </div>
+              }
+            }
             @if (!attempt()) {
               <p>
                 Se pagará la primera cuota pendiente completa. Para adelantar otra, primero espera
@@ -191,7 +208,7 @@
                   <p-message severity="error">Ingresa un correo válido.</p-message>
                 }
                 <button pButton type="submit" [loading]="paymentBusy()" [disabled]="paymentBusy()">
-                  Pagar cuota con Khipu
+                  Pagar cuota {{ nextInstallment()?.number }} con Khipu
                 </button>
                 <p class="text-xs text-muted">
                   Este sitio está protegido por reCAPTCHA y se aplican la

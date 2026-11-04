@@ -9,6 +9,7 @@ export interface PortalAttempt {
     | 'PROVIDER_REVIEW_REQUIRED'
     | 'UNPAID_FINAL'
     | 'REVERSED';
+  installmentNumber?: number;
   paymentUrl?: string;
   receiptReady?: boolean;
   lastCheckedAt?: string;
