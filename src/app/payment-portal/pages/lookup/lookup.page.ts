@@ -19,6 +19,7 @@ import { RecaptchaService } from '../../services/recaptcha';
 import type { PublicAccount } from '../../interfaces/public-account.interface';
 import type { PortalAttempt } from '../../interfaces/portal-attempt.interface';
 import { newAttemptId, safeCheckoutUrl } from '../../fn/khipu-dev.fn';
+import { checkoutErrorMessage } from '../../fn/checkout-error-message';
 import {
   passengerRutValidator,
   tripCodeValidator,
@@ -241,12 +242,10 @@ export class LookupPage {
                 paymentWindow.close();
               }
             },
-            error: () => {
+            error: (error: unknown) => {
               if (paymentWindow && !paymentWindow.closed) paymentWindow.close();
               this.paymentBusy.set(false);
-              this.paymentError.set(
-                'No se pudo obtener el resultado. Reintenta esta misma solicitud; no se cambiará su referencia ni el correo.',
-              );
+              this.paymentError.set(checkoutErrorMessage(error));
             },
           });
       })

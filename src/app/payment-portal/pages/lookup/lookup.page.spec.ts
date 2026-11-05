@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { of, Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LookupPage } from './lookup.page';
@@ -127,6 +128,23 @@ describe('LookupPage', () => {
     expect(api.checkout.mock.calls[1]).toEqual(original);
     expect(root.textContent).toContain('Estamos verificando este intento');
     expect(root.querySelector('a[target="_blank"]')).toBeNull();
+  });
+  it('explica un rechazo de seguridad sin exponer detalles internos', async () => {
+    const { fixture, root } = await checkoutScreen();
+    const response = new Subject<never>();
+    api.checkout.mockReturnValue(response);
+    input(root, '#receipt-email', 'familia@example.com');
+    submit(root);
+    await fixture.whenStable();
+    response.error(
+      new HttpErrorResponse({
+        status: 403,
+        error: { data: { error: 'PAYMENT_SECURITY_REJECTED' } },
+      }),
+    );
+    await fixture.whenStable();
+    expect(root.textContent).toContain('Desactiva temporalmente VPN');
+    expect(root.textContent).not.toContain('PAYMENT_SECURITY_REJECTED');
   });
   it('consulta la confirmación sin marcar cuotas pagadas ni crear otro cobro', async () => {
     const { fixture, root } = await checkoutScreen();
