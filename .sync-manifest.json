@@ -10,7 +10,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/.claude/rules/global-rules.md",
       "targetPath": ".claude/rules/global-rules.md",
-      "checksum": "sha256:158b782d1f2df91b37493048ce013527ec65a5130f48f8ef0c9b35142613e2da"
+      "checksum": "sha256:919b01ecf30c8d1979bc325260cd9046d53a519d2db4a943089102787c14d913"
     },
     {
       "sourcePaths": [
@@ -88,7 +88,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/AGENTS.md",
       "targetPath": "AGENTS.md",
-      "checksum": "sha256:02a93dad60c5525eb1c2e2f6be7a92f32d3dcee0bfeafdfc24cc9972e352642f"
+      "checksum": "sha256:9f142ac10b4418eea6ae21d3259ac70720c3ed91fdb342fecbd5b65f201d3e8f"
     },
     {
       "sourcePaths": [
@@ -100,7 +100,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/CLAUDE.md",
       "targetPath": ".claude/CLAUDE.md",
-      "checksum": "sha256:dbff98adeac3edfeaec1a2622450e808ebe676ecce93d9abf5c1650d8f136147"
+      "checksum": "sha256:f4b8e166eb3f3a6cf83f4176ad70682c4968cee1caca4eed97cfb62b867d775b"
     },
     {
       "sourcePaths": [
@@ -112,7 +112,7 @@
       ],
       "outputPath": "ai/generated/app-ngx-pay/GEMINI.md",
       "targetPath": ".gemini/GEMINI.md",
-      "checksum": "sha256:570f0b07d834d76d7981f5da4e9f2fd57cdf3a03684c9b43b396588e81024bc9"
+      "checksum": "sha256:e3e8fc487da01982101faf29a1956e1678a00684667784b2d8955e063cfe5915"
     },
     {
       "sourcePaths": [
@@ -216,6 +216,6 @@
   ],
   "managedBy": "indomito-context-compiler",
   "artifactFormatVersion": 1,
-  "sourceCommit": "310658bdfc2f77bc3532780e2a5f9b0ecc189a05",
+  "sourceCommit": "e93e8ea75a0646f8ef4e15bf9012c7846b790579",
   "sourceDirty": true
 }
