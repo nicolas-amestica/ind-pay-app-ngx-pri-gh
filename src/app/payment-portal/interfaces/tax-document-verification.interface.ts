@@ -8,6 +8,13 @@ export interface TaxDocumentItem {
 
 export interface TaxDocumentVerification {
   readonly authentic: boolean;
+  readonly queryStatus?: 'FOUND' | 'NOT_FOUND' | 'RATE_LIMITED' | 'UNAVAILABLE' | 'INVALID_REQUEST';
+  readonly issuedByIndomito?: boolean;
+  readonly siiStatus?: 'PENDING' | 'ACCEPTED' | 'ACCEPTED_WITH_REPAIRS' | 'REJECTED' | 'UNKNOWN';
+  readonly siiStatusUpdatedAt?: string;
+  readonly originalFolio?: number;
+  readonly replacementFolio?: number;
+  readonly replacementPending?: boolean;
   readonly documentType?: number;
   readonly folio?: number;
   readonly issueDate?: string;

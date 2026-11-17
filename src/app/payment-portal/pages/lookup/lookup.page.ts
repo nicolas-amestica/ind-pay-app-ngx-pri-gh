@@ -20,6 +20,7 @@ import type { PublicAccount } from '../../interfaces/public-account.interface';
 import type { PortalAttempt } from '../../interfaces/portal-attempt.interface';
 import { newAttemptId, safeCheckoutUrl } from '../../fn/khipu-dev.fn';
 import { checkoutErrorMessage } from '../../fn/checkout-error-message';
+import { LegalFooterComponent } from '../../components/legal-footer.component';
 import {
   passengerRutValidator,
   tripCodeValidator,
@@ -35,6 +36,7 @@ import {
     InputText,
     Panel,
     Message,
+    LegalFooterComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './lookup.page.html',

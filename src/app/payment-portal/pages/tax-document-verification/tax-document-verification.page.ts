@@ -21,6 +21,7 @@ import { Panel } from 'primeng/panel';
 import { finalize } from 'rxjs';
 import type { TaxDocumentVerification } from '../../interfaces/tax-document-verification.interface';
 import { PublicPayments } from '../../services/public-payments';
+import { LegalFooterComponent } from '../../components/legal-footer.component';
 
 @Component({
   selector: 'app-tax-document-verification',
@@ -34,6 +35,7 @@ import { PublicPayments } from '../../services/public-payments';
     Panel,
     ReactiveFormsModule,
     RouterLink,
+    LegalFooterComponent,
   ],
   templateUrl: './tax-document-verification.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,7 +77,7 @@ export class TaxDocumentVerificationPage {
       )
       .subscribe({
         next: (result) => this.result.set(result),
-        error: () => this.result.set({ authentic: false }),
+        error: () => this.result.set({ authentic: false, queryStatus: 'UNAVAILABLE' }),
       });
   }
 

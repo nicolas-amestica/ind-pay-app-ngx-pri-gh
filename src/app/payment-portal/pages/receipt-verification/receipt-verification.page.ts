@@ -10,10 +10,21 @@ import { Panel } from 'primeng/panel';
 import { finalize } from 'rxjs';
 import type { ReceiptVerification } from '../../interfaces/receipt-verification.interface';
 import { PublicPayments } from '../../services/public-payments';
+import { LegalFooterComponent } from '../../components/legal-footer.component';
 
 @Component({
   selector: 'app-receipt-verification',
-  imports: [CurrencyPipe, DatePipe, ReactiveFormsModule, RouterLink, ButtonDirective, InputText, Message, Panel],
+  imports: [
+    CurrencyPipe,
+    DatePipe,
+    ReactiveFormsModule,
+    RouterLink,
+    ButtonDirective,
+    InputText,
+    Message,
+    Panel,
+    LegalFooterComponent,
+  ],
   templateUrl: './receipt-verification.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,12 +48,15 @@ export class ReceiptVerificationPage {
     if (this.code.invalid) return;
     this.busy.set(true);
     this.result.set(null);
-    this.api.verifyReceipt(this.code.value).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => this.busy.set(false)),
-    ).subscribe({
-      next: (result) => this.result.set(result),
-      error: () => this.result.set({ authentic: false }),
-    });
+    this.api
+      .verifyReceipt(this.code.value)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.busy.set(false)),
+      )
+      .subscribe({
+        next: (result) => this.result.set(result),
+        error: () => this.result.set({ authentic: false }),
+      });
   }
 }

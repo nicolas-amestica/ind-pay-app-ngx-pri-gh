@@ -3,7 +3,14 @@
   <header class="bg-night px-4 py-6 text-white sm:px-8">
     <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4">
       <img src="/brand/logo-web-large.png" alt="Giras Indómito" class="h-10 max-w-full w-auto" />
-      <button pButton type="button" severity="secondary" outlined (click)="theme.toggle()">
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        outlined
+        class="!border-white/75 !text-white"
+        (click)="theme.toggle()"
+      >
         {{ theme.label() }}
       </button>
     </div>
@@ -18,10 +25,12 @@
       <h1 class="mt-2 text-3xl font-semibold sm:text-4xl">Las cuotas de tu viaje</h1>
       <p class="mt-3 text-muted">
         Consulta con el RUT del pasajero y el código del viaje que aparece en el contrato aprobado.
-        El acceso maestro es exclusivo de administración.
+        Este portal ejecuta pagos de obligaciones ya pactadas en un contrato previo; no contrata un
+        viaje nuevo ni modifica importes, vencimientos o condiciones contractuales. El acceso
+        maestro es exclusivo de administración.
       </p>
     </div>
-    @if (!account()?.checkoutEnabled) {
+    @if (account() && !account()?.checkoutEnabled) {
       <p-message severity="info"
         >Puedes consultar tus cuotas. El pago en línea aún no está habilitado.</p-message
       >
@@ -202,7 +211,8 @@
                   aria-describedby="receipt-email-help"
                 />
                 <p id="receipt-email-help" class="text-sm text-muted">
-                  Este correo se usará para el comprobante, no para iniciar sesión.
+                  Este correo se usará para entregar el comprobante interno y la boleta electrónica.
+                  No se usa para iniciar sesión. El comprobante minimiza la identidad del pasajero.
                 </p>
                 @if (email.touched && email.invalid) {
                   <p-message severity="error">Ingresa un correo válido.</p-message>
@@ -249,8 +259,9 @@
                   }
                   @case ('CONFIRMED') {
                     <p-message severity="success"
-                      >Pago confirmado. El comprobante fue enviado al correo indicado. Antes de
-                      cerrar, puedes solicitar una única copia en otra casilla.</p-message
+                      >Pago confirmado y aplicado al registro. La preparación de documentos, el
+                      correo y el procesamiento del SII continúan por separado. No vuelvas a pagar
+                      esta cuota.</p-message
                     >
                   }
                   @case ('REVIEW_REQUIRED') {
@@ -292,15 +303,47 @@
                 }
                 @if (current.status === 'CONFIRMED' && !current.receiptReady) {
                   <p-message severity="info"
-                    >Estamos preparando el comprobante. Usa “Consultar estado” para habilitar el
-                    reenvío antes de cerrar.</p-message
+                    >Estamos preparando el comprobante interno. El pago ya está confirmado y este
+                    proceso no generará otro cobro.</p-message
                   >
                 }
                 @if (current.status === 'CONFIRMED' && current.receiptReady) {
+                  <p-message severity="success">El comprobante interno está disponible.</p-message>
+                  @switch (current.receiptDeliveryStatus) {
+                    @case ('SMTP_ACCEPTED') {
+                      <p-message severity="success"
+                        >El servidor SMTP aceptó el correo para entrega. Esto no garantiza que haya
+                        llegado a la bandeja del destinatario.</p-message
+                      >
+                    }
+                    @case ('PENDING') {
+                      <p-message severity="info"
+                        >El envío del comprobante está pendiente.</p-message
+                      >
+                    }
+                    @case ('FAILED_RETRYING') {
+                      <p-message severity="warn"
+                        >El envío del comprobante falló y permanece disponible para recuperación. No
+                        vuelvas a pagar.</p-message
+                      >
+                    }
+                    @case ('FAILED') {
+                      <p-message severity="warn"
+                        >El envío del comprobante falló. El documento y el pago se conservaron, y
+                        puedes solicitar una copia desde esta consulta.</p-message
+                      >
+                    }
+                    @case ('UNKNOWN') {
+                      <p-message severity="warn"
+                        >No pudimos acreditar el estado del correo. El pago sigue confirmado y el
+                        comprobante permanece disponible.</p-message
+                      >
+                    }
+                  }
                   @if (resendQueued()) {
-                    <p-message severity="success"
-                      >La copia fue solicitada. Revisa también la carpeta de correo no
-                      deseado.</p-message
+                    <p-message severity="info"
+                      >La copia quedó en cola. La solicitud no acredita todavía que el servidor de
+                      correo la haya aceptado.</p-message
                     >
                   } @else {
                     <form
@@ -308,7 +351,7 @@
                       (ngSubmit)="resendReceipt()"
                       class="flex flex-col gap-3"
                     >
-                      <label for="resend-receipt-email">Reenviar una copia a otra casilla</label>
+                      <label for="resend-receipt-email">Enviar una copia a otra casilla</label>
                       <input
                         pInputText
                         id="resend-receipt-email"
@@ -322,8 +365,8 @@
                         <p-message severity="error">Ingresa un correo válido.</p-message>
                       }
                       <p class="text-sm text-muted">
-                        Esta opción desaparece al cerrar la consulta y no permite recuperar
-                        comprobantes anteriores.
+                        La copia usa un comprobante con identidad minimizada. Esta opción desaparece
+                        al cerrar la consulta y no permite recuperar otros pagos.
                       </p>
                       <button
                         pButton
@@ -331,9 +374,75 @@
                         [loading]="paymentBusy()"
                         [disabled]="paymentBusy()"
                       >
-                        Reenviar comprobante
+                        Solicitar copia
                       </button>
                     </form>
+                  }
+                }
+                @if (current.status === 'CONFIRMED') {
+                  @switch (current.taxDocumentStatus) {
+                    @case ('PREPARING') {
+                      <p-message severity="info"
+                        >La boleta electrónica está en preparación. El pago ya confirmado no se
+                        revertirá por esta espera.</p-message
+                      >
+                    }
+                    @case ('SUBMITTED') {
+                      <p-message severity="info"
+                        >La boleta fue emitida por Indómito y enviada al SII. Su aceptación aún está
+                        pendiente.</p-message
+                      >
+                    }
+                    @case ('ACCEPTED') {
+                      <p-message severity="success"
+                        >El SII informó la boleta como aceptada.</p-message
+                      >
+                    }
+                    @case ('ACCEPTED_WITH_REPAIRS') {
+                      <p-message severity="warn"
+                        >El SII aceptó la boleta con reparos. Indómito debe revisar la observación;
+                        no vuelvas a pagar.</p-message
+                      >
+                    }
+                    @case ('REJECTED') {
+                      <p-message severity="warn"
+                        >El SII rechazó la boleta. El pago sigue confirmado y la regularización
+                        tributaria está pendiente.</p-message
+                      >
+                    }
+                    @case ('REISSUE_PENDING') {
+                      <p-message severity="warn"
+                        >La boleta rechazada tiene una reemisión en curso. El documento original se
+                        conserva para trazabilidad.</p-message
+                      >
+                    }
+                    @case ('UNKNOWN') {
+                      <p-message severity="warn"
+                        >No pudimos acreditar el estado tributario. El pago sigue confirmado y
+                        requiere revisión.</p-message
+                      >
+                    }
+                  }
+                  @if (current.taxDocumentDeliveryStatus === 'SMTP_ACCEPTED') {
+                    <p-message severity="success"
+                      >El servidor SMTP aceptó el correo de la boleta para entrega; la recepción en
+                      bandeja no está garantizada.</p-message
+                    >
+                  }
+                  @if (current.taxDocumentDeliveryStatus === 'DOCUMENT_READY_NO_RECIPIENT') {
+                    <p-message severity="info"
+                      >La boleta está preparada, pero no se registró un destinatario de
+                      correo.</p-message
+                    >
+                  }
+                  @if (
+                    current.taxDocumentDeliveryStatus === 'FAILED' ||
+                    current.taxDocumentDeliveryStatus === 'FAILED_RETRYING'
+                  ) {
+                    <p-message severity="warn"
+                      >La entrega de la boleta por correo falló. El documento permanece registrado
+                      para recuperación y no se generará otro cobro.</p-message
+                    >
                   }
                 }
                 @if (fallbackCheckoutUrl(); as url) {
@@ -395,9 +504,6 @@
         </p-panel>
       }
     }
-    <footer class="border-t border-line pt-4 text-sm text-muted">
-      No compartas el código fuera de tu grupo. Los comprobantes de pago no son boletas ni facturas
-      tributarias.
-    </footer>
+    <app-legal-footer />
   </main>
 </div>

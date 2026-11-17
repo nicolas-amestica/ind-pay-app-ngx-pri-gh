@@ -34,6 +34,18 @@ export const PAYMENT_PORTAL_ROUTES: Routes = [
         (m) => m.TaxDocumentVerificationPage,
       ),
   },
+  {
+    path: 'privacidad',
+    loadComponent: () =>
+      import('./pages/privacy-policy/privacy-policy.page').then((m) => m.PrivacyPolicyPage),
+  },
+  {
+    path: 'informacion-legal',
+    loadComponent: () =>
+      import('./pages/legal-information/legal-information.page').then(
+        (m) => m.LegalInformationPage,
+      ),
+  },
   ...(!environment.production
     ? [
         {

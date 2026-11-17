@@ -13,6 +13,12 @@ export function checkoutErrorMessage(error: unknown): string {
     if (code === 'PAYMENT_SECURITY_UNAVAILABLE') {
       return 'La validación de seguridad no está disponible temporalmente. Intenta nuevamente en unos minutos.';
     }
+    if (code === 'PAYMENT_CHECKOUT_DISABLED') {
+      return 'Los nuevos pagos están deshabilitados temporalmente. Si ya iniciaste uno, consulta ese mismo intento y no vuelvas a pagar.';
+    }
+    if (code === 'PAYMENT_CHECKOUT_CONFIGURATION_INVALID') {
+      return 'Los nuevos pagos no están disponibles por una configuración del servicio. La consulta y el seguimiento de intentos existentes continúan disponibles.';
+    }
   }
   return 'No se pudo obtener el resultado. Reintenta esta misma solicitud; no se cambiará su referencia ni el correo.';
 }

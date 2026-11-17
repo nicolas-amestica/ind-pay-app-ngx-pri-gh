@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { of, Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LookupPage } from './lookup.page';
@@ -58,6 +59,7 @@ describe('LookupPage', () => {
         { provide: PublicPayments, useValue: api },
         { provide: ThemeService, useValue: { label: () => 'Cambiar tema', toggle: vi.fn() } },
         { provide: RecaptchaService, useValue: recaptcha },
+        provideRouter([]),
       ],
     });
   });
@@ -172,6 +174,31 @@ describe('LookupPage', () => {
     expect(root.textContent).toContain('Pago confirmado');
     expect(root.textContent).toContain('Pago confirmado');
   });
+  it('distingue pago, comprobante, correo y estado tributario', async () => {
+    const { fixture, root } = await checkoutScreen();
+    api.checkout.mockReturnValue(
+      of({
+        id: 'attempt',
+        status: 'CONFIRMED',
+        receiptReady: true,
+        receiptStatus: 'AVAILABLE',
+        receiptDeliveryStatus: 'FAILED',
+        receiptRecoveryAvailable: true,
+        taxDocumentStatus: 'REJECTED',
+        taxDocumentDeliveryStatus: 'FAILED_RETRYING',
+        taxDocumentRecoveryAvailable: true,
+      }),
+    );
+    input(root, '#receipt-email', 'familia@example.com');
+    submit(root);
+    await fixture.whenStable();
+    expect(root.textContent).toContain('Pago confirmado y aplicado');
+    expect(root.textContent).toContain('El comprobante interno está disponible');
+    expect(root.textContent).toContain('El envío del comprobante falló');
+    expect(root.textContent).toContain('El SII rechazó la boleta');
+    expect(root.textContent).toContain('La entrega de la boleta por correo falló');
+  });
+
   it('ofrece un solo reenvío únicamente mientras permanece la confirmación abierta', async () => {
     const { fixture, root } = await checkoutScreen();
     api.checkout.mockReturnValue(of({ id: 'attempt', status: 'CONFIRMED', receiptReady: true }));
@@ -179,7 +206,7 @@ describe('LookupPage', () => {
     input(root, '#receipt-email', 'familia@example.com');
     submit(root);
     await fixture.whenStable();
-    expect(root.textContent).toContain('no permite recuperar comprobantes anteriores');
+    expect(root.textContent).toContain('no permite recuperar otros pagos');
     expect(root.textContent).not.toContain('Descargar');
     input(root, '#resend-receipt-email', 'otro@example.com');
     const resendForm = (root.querySelector('#resend-receipt-email') as HTMLInputElement).closest(
@@ -193,7 +220,7 @@ describe('LookupPage', () => {
       expect.stringMatching(/^[0-9A-HJKMNP-TV-Z]{26}$/),
       'passenger-session',
     );
-    expect(root.textContent).toContain('La copia fue solicitada');
+    expect(root.textContent).toContain('La copia quedó en cola');
     [...root.querySelectorAll('button')]
       .find((b) => b.textContent?.includes('Cerrar consulta'))!
       .click();
@@ -299,6 +326,18 @@ describe('LookupPage', () => {
     await fixture.whenStable();
     expect(root.querySelector('a[target="_blank"]')).toBeNull();
   });
+  it('no informa checkout deshabilitado antes de consultar una cuenta', async () => {
+    const fixture = await mount();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).not.toContain('El pago en línea aún no está habilitado');
+
+    input(root, '#passenger-rut', '12.345.678-5');
+    input(root, '#trip-code', 'AB23CD');
+    submit(root);
+    await fixture.whenStable();
+    expect(root.textContent).toContain('El pago en línea aún no está habilitado');
+  });
+
   it('consulta con RUT y código del contrato sin OTP ni pago simulado', async () => {
     const fixture = await mount();
     const root = fixture.nativeElement as HTMLElement;
