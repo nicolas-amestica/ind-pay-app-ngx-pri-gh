@@ -8,7 +8,7 @@
         type="button"
         severity="secondary"
         outlined
-        class="!border-white/75 !text-white"
+        class="border-white/75! text-white!"
         (click)="theme.toggle()"
       >
         {{ theme.label() }}
@@ -213,14 +213,34 @@
                   maxlength="254"
                   [formControl]="email"
                   [attr.aria-invalid]="email.touched && email.invalid"
-                  aria-describedby="receipt-email-help"
+                  [attr.aria-describedby]="email.valid && emailSuggestion()
+                    ? 'receipt-email-suggestion receipt-email-help'
+                    : 'receipt-email-help'"
                 />
+                @if (email.valid && emailSuggestion(); as suggestion) {
+                  <p-message id="receipt-email-suggestion" severity="warn">
+                    <span class="flex flex-wrap items-center gap-2">
+                      <span>¿Quisiste decir <strong class="break-all">{{ suggestion }}</strong>?</span>
+                      <button pButton type="button" (click)="email.setValue(suggestion)">
+                        Usar sugerencia
+                      </button>
+                    </span>
+                  </p-message>
+                }
                 <p id="receipt-email-help" class="text-sm text-muted">
                   Este correo se usará para entregar el comprobante interno y la boleta electrónica.
                   No se usa para iniciar sesión. El comprobante minimiza la identidad del pasajero.
                 </p>
                 @if (email.touched && email.invalid) {
-                  <p-message severity="error">Ingresa un correo válido.</p-message>
+                  <p-message severity="error">
+                    @if (email.hasError('required')) {
+                      Ingresa el correo donde quieres recibir tus documentos.
+                    } @else if (email.hasError('pattern') && !email.hasError('email')) {
+                      Revisa el dominio de tu correo. Ejemplo: nombre&#64;gmail.com.
+                    } @else {
+                      Ingresa un correo válido.
+                    }
+                  </p-message>
                 }
                 <button pButton type="submit" [loading]="paymentBusy()" [disabled]="paymentBusy()">
                   Pagar cuota {{ nextInstallment()?.number }} con Khipu

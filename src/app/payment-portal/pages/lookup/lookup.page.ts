@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Panel } from 'primeng/panel';
@@ -21,6 +21,7 @@ import { RecaptchaService } from '../../services/recaptcha';
 import type { PublicAccount } from '../../interfaces/public-account.interface';
 import type { PortalAttempt } from '../../interfaces/portal-attempt.interface';
 import { newAttemptId, safeCheckoutUrl } from '../../fn/khipu-dev.fn';
+import { receiptEmailSuggestion } from '../../fn/receipt-email-suggestion';
 import { checkoutErrorMessage } from '../../fn/checkout-error-message';
 import { LegalFooterComponent } from '../../components/legal-footer.component';
 import {
@@ -61,8 +62,10 @@ export class LookupPage {
   protected readonly fallbackCheckoutUrl = signal<string | null>(null);
   protected readonly email = new FormControl('', {
     nonNullable: true,
-    validators: [Validators.required, Validators.email, Validators.maxLength(254)],
+    validators: [Validators.required, Validators.email, Validators.maxLength(254), Validators.pattern(/^[^@]+@[^@]+\.[^@]+$/)],
   });
+  private readonly enteredEmail = toSignal(this.email.valueChanges, { initialValue: '' });
+  protected readonly emailSuggestion = computed(() => receiptEmailSuggestion(this.enteredEmail()));
   protected readonly checkoutForm = new FormGroup({ email: this.email });
   protected readonly resendEmail = new FormControl('', {
     nonNullable: true,
