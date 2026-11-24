@@ -57,7 +57,7 @@ describe('LookupPage', () => {
       imports: [LookupPage],
       providers: [
         { provide: PublicPayments, useValue: api },
-        { provide: ThemeService, useValue: { label: () => 'Cambiar tema', toggle: vi.fn() } },
+        { provide: ThemeService, useValue: { label: () => 'Cambiar tema', icon: () => 'icon-[tabler--moon]', toggle: vi.fn() } },
         { provide: RecaptchaService, useValue: recaptcha },
         provideRouter([]),
       ],

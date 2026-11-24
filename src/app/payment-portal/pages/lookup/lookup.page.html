@@ -2,16 +2,19 @@
   <a href="#payment-content" class="sr-only focus:not-sr-only">Saltar al contenido</a>
   <header class="bg-night py-6 text-white">
     <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-4 sm:px-8">
-      <img src="/brand/logo-web-large.png" alt="Giras Indómito" class="h-10 max-w-full w-auto" />
+      <img src="/brand/logo-web-large.png" alt="Giras Indómito" class="h-10 max-w-full w-auto dark:brightness-0 dark:invert" />
       <button
         pButton
         type="button"
         severity="secondary"
         outlined
-        class="border-white/75! text-white!"
+        [rounded]="true"
+        class="size-11 shrink-0 p-0! border-white/75! bg-night! text-white! hover:bg-white/15! active:bg-white/25! focus-visible:outline-white!"
+        [attr.aria-label]="theme.label()"
+        [attr.title]="theme.label()"
         (click)="theme.toggle()"
       >
-        {{ theme.label() }}
+        <span [class]="theme.icon()" aria-hidden="true"></span>
       </button>
     </div>
   </header>

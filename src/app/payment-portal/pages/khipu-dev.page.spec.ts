@@ -32,7 +32,7 @@ describe('KhipuDevPage', () => {
       providers: [
         provideRouter([]),
         { provide: KhipuDev, useValue: api },
-        { provide: ThemeService, useValue: { label: () => 'Cambiar tema', toggle: vi.fn() } },
+        { provide: ThemeService, useValue: { label: () => 'Cambiar tema', icon: () => 'icon-[tabler--moon]', toggle: vi.fn() } },
       ],
     });
   });

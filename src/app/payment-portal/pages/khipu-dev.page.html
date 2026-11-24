@@ -1,15 +1,25 @@
 <div class="min-h-screen bg-canvas text-ink">
   <header class="bg-night px-4 py-6 text-white sm:px-8">
     <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4">
-      <img src="/brand/logo-web-large.png" alt="Giras Indómito" class="h-10 w-auto max-w-full" />
+      <img src="/brand/logo-web-large.png" alt="Giras Indómito" class="h-10 w-auto max-w-full dark:brightness-0 dark:invert" />
       <span class="text-sm text-white/70">Laboratorio de pagos · DEV</span>
     </div>
   </header>
   <main class="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8 sm:px-8" [attr.aria-busy]="busy()">
     <nav aria-label="Navegación de pruebas" class="flex flex-wrap gap-3">
       <a pButton routerLink="/" severity="secondary" outlined>Volver al simulador</a>
-      <button pButton severity="secondary" outlined (click)="theme.toggle()">
-        {{ theme.label() }}
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        outlined
+        [rounded]="true"
+        class="size-11 shrink-0 p-0! border-control-border! bg-surface! text-ink! hover:bg-canvas! active:bg-surface! focus-visible:outline-ink!"
+        [attr.aria-label]="theme.label()"
+        [attr.title]="theme.label()"
+        (click)="theme.toggle()"
+      >
+        <span [class]="theme.icon()" aria-hidden="true"></span>
       </button>
     </nav>
     <div>
