@@ -1,3 +1,5 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { map, takeWhile, timer } from 'rxjs';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -83,6 +85,26 @@ export class LookupPage {
   });
   protected readonly busy = signal(false);
   protected readonly failed = signal(false);
+  protected readonly retrySeconds = signal(0);
+
+  private handleLookupError(error: unknown): void {
+    const seconds = error instanceof HttpErrorResponse && error.status === 429
+      ? error.error?.retryAfterSeconds
+      : undefined;
+    if (typeof seconds === 'number' && Number.isInteger(seconds) && seconds > 0 && seconds <= 300) {
+      const deadline = Date.now() + seconds * 1000;
+      this.retrySeconds.set(seconds);
+      timer(0, 1000).pipe(
+        map(() => Math.max(0, Math.ceil((deadline - Date.now()) / 1000))),
+        takeWhile((remaining) => remaining > 0, true),
+        takeUntilDestroyed(this.destroyRef),
+      ).subscribe(this.retrySeconds.set);
+    } else {
+      this.failed.set(true);
+    }
+    this.form.enable();
+    this.busy.set(false);
+  }
   protected readonly account = signal<PublicAccount | null>(null);
   protected readonly masterAccounts = signal<{ accountId: string; tripId: string; name: string }[]>(
     [],
@@ -107,7 +129,7 @@ export class LookupPage {
   }
 
   protected lookup(): void {
-    if (this.busy()) return;
+    if (this.busy() || this.retrySeconds()) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     this.failed.set(false);
@@ -140,16 +162,12 @@ export class LookupPage {
             this.startAttemptPolling();
           }
         },
-        error: () => {
-          this.failed.set(true);
-          this.form.enable();
-          this.busy.set(false);
-        },
+        error: (error: unknown) => this.handleLookupError(error),
       });
   }
 
   protected selectMasterAccount(accountId: string): void {
-    if (this.busy() || !this.masterCredentials) return;
+    if (this.busy() || this.retrySeconds() || !this.masterCredentials) return;
     this.busy.set(true);
     this.failed.set(false);
     const { rut, code } = this.masterCredentials;
@@ -164,10 +182,7 @@ export class LookupPage {
           this.form.reset();
           this.busy.set(false);
         },
-        error: () => {
-          this.failed.set(true);
-          this.busy.set(false);
-        },
+        error: (error: unknown) => this.handleLookupError(error),
       });
   }
 

@@ -1,7 +1,7 @@
 <div class="min-h-screen bg-canvas text-ink">
   <a href="#payment-content" class="sr-only focus:not-sr-only">Saltar al contenido</a>
-  <header class="bg-night px-4 py-6 text-white sm:px-8">
-    <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4">
+  <header class="bg-night py-6 text-white">
+    <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-4 sm:px-8">
       <img src="/brand/logo-web-large.png" alt="Giras Indómito" class="h-10 max-w-full w-auto" />
       <button
         pButton
@@ -35,6 +35,11 @@
         >Puedes consultar tus cuotas. El pago en línea aún no está habilitado.</p-message
       >
     }
+    @if (retrySeconds()) {
+      <p-message severity="warn" aria-live="off">
+        Podrás volver a intentar en {{ retrySeconds() }} segundos.
+      </p-message>
+    }
     @if (failed()) {
       <p-message severity="error"
         >No fue posible consultar las cuotas. Verifica el RUT y el código del contrato o intenta más
@@ -43,7 +48,7 @@
     }
     @if (!account()) {
       <p-panel header="Consultar cuotas">
-        <form [formGroup]="form" (ngSubmit)="lookup()" class="flex max-w-lg flex-col gap-5">
+        <form [formGroup]="form" (ngSubmit)="lookup()" class="flex w-full flex-col gap-5">
           <p class="text-sm text-muted">
             Ambos campos son obligatorios. No necesitas solicitar un código por correo.
           </p>
@@ -88,7 +93,7 @@
               <p-message severity="error">Ingresa un código de acceso válido.</p-message>
             }
           </div>
-          <button pButton type="submit" [loading]="busy()" [disabled]="busy()">Ver cuotas</button>
+          <button pButton type="submit" [loading]="busy()" [disabled]="busy() || retrySeconds() > 0">Ver cuotas</button>
         </form>
       </p-panel>
       @if (masterAccounts().length) {
@@ -102,7 +107,7 @@
                 outlined
                 class="min-w-0 max-w-full"
                 [loading]="busy()"
-                [disabled]="busy()"
+                [disabled]="busy() || retrySeconds() > 0"
                 (click)="selectMasterAccount(option.accountId)"
               >
                 {{ option.name || 'Pasajero' }} · gira {{ option.tripId }}
@@ -175,7 +180,7 @@
           pending().length)
       ) {
         <p-panel [header]="attempt() ? 'Estado del intento de pago' : 'Pagar la siguiente cuota'">
-          <div class="flex max-w-lg flex-col gap-4" [attr.aria-busy]="paymentBusy()">
+          <div class="flex w-full flex-col gap-4" [attr.aria-busy]="paymentBusy()">
             @if (attempt()?.installmentNumber; as installmentNumber) {
               <div class="rounded-xl border border-line bg-surface-subtle p-4">
                 <p class="text-sm text-muted">Cuota asociada a este pago</p>
